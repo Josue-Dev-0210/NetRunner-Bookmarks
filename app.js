@@ -8,6 +8,7 @@ const aiProviders = document.querySelectorAll(".ai-provider");
 const settingsToggle = document.querySelector("#settings-toggle");
 const settingsContent = document.querySelector("#settings-content");
 const settingsPanel = document.querySelector(".settings-panel");
+if (settingsPanel) document.body.append(settingsPanel);
 const languageSelect = document.querySelector("#language-select");
 const iconSizeInput = document.querySelector("#icon-size");
 const iconSizeStatus = document.querySelector("#icon-size-status");

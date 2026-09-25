@@ -1375,13 +1375,14 @@ h1 {
   }
 }
 
-:root[data-density] .settings-panel {
+.settings-panel {
   position: fixed;
-  right: 1rem;
+  left: 1rem;
   bottom: 1rem;
+  right: auto;
   z-index: 900;
-  display: none;
-  width: min(26rem, calc(100vw - 2rem));
+  display: flex;
+  width: 13rem;
   max-height: min(88vh, 48rem);
   flex-direction: column;
   overflow: hidden;
@@ -1395,6 +1396,11 @@ h1 {
 
 .settings-panel.is-open {
   display: flex;
+  width: min(26rem, calc(100vw - 2rem));
+}
+
+.settings-panel:not(.is-open) {
+  overflow: visible;
 }
 
 .settings-content {
@@ -1432,6 +1438,11 @@ h1 {
   backdrop-filter: blur(16px) saturate(130%);
   transition: border-color 150ms ease, color 150ms ease, box-shadow 150ms ease,
     transform 150ms ease;
+}
+
+.settings-panel:not(.is-open) .settings-toggle {
+  min-height: 3.25rem;
+  white-space: nowrap;
 }
 
 .settings-toggle:hover,
@@ -1499,11 +1510,19 @@ h1 {
 }
 
 @media (max-width: 600px) {
-  :root[data-density] .settings-panel {
-    right: 0.6rem;
+  .settings-panel {
+    left: 0.6rem;
     bottom: 0.6rem;
-    width: min(26rem, calc(100vw - 1.2rem));
+    right: auto;
     max-height: 90vh;
+  }
+
+  .settings-panel:not(.is-open) {
+    width: 13rem;
+  }
+
+  .settings-panel.is-open {
+    width: min(26rem, calc(100vw - 1.2rem));
   }
 
   .settings-panel.is-open .settings-content {

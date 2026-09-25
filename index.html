@@ -69,11 +69,6 @@
             <div class="telemetry-bar"><span id="telemetry-bar-fill"></span></div>
           </div>
         </section>
-        <button id="settings-toggle" class="settings-toggle" type="button" aria-expanded="false" aria-controls="settings-content">
-          <span aria-hidden="true">⚙</span>
-          <span data-i18n>VISUAL SYSTEM</span>
-          <span class="settings-plus" aria-hidden="true">+</span>
-        </button>
       </aside>
 
       <section class="workspace">
@@ -200,6 +195,11 @@
           <p id="empty-state" class="empty-state" hidden>No signals found in the network.</p>
         </section>
         <section class="settings-panel" aria-label="Customization settings">
+          <button id="settings-toggle" class="settings-toggle" type="button" aria-expanded="false" aria-controls="settings-content">
+            <span aria-hidden="true">⚙</span>
+            <span data-i18n>VISUAL SYSTEM</span>
+            <span class="settings-plus" aria-hidden="true">+</span>
+          </button>
           <div id="settings-content" class="settings-content" hidden>
             <div class="setting-row">
               <label class="settings-label" for="language-select" data-i18n>LANGUAGE</label>
