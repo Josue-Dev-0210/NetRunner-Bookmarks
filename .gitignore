@@ -1,0 +1,25 @@
+# Local secrets and API credentials
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+api-key*
+apikey*
+*api-key*
+*apikey*
+secrets/
+credentials/
+
+# Local browser and packaging output
+dist/
+.cache/
+*.crx
+*.xpi
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/

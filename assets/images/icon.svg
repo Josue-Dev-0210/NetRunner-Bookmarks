@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Demontech icon">
+  <rect x="8" y="8" width="112" height="112" rx="20" fill="#09090d" stroke="#ff2e63" stroke-width="3"/>
+  <rect x="18" y="18" width="92" height="92" rx="16" fill="none" stroke="rgba(176,38,255,0.35)"/>
+  <rect x="34" y="26" width="12" height="76" rx="6" fill="#70f7ff"/>
+  <rect x="46" y="26" width="48" height="76" rx="18" fill="#ff2e63"/>
+  <rect x="58" y="38" width="26" height="52" rx="12" fill="#09090d"/>
+  <circle cx="92" cy="24" r="6" fill="#70f7ff"/>
+</svg>

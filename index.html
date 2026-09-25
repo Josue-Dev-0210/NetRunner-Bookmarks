@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#050505" />
+    <title>New tab</title>
+    <link rel="icon" href="assets/images/icon-32.png" type="image/png" sizes="32x32" />
+    <link rel="icon" href="assets/images/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="assets/images/icon-128.png" />
+    <link rel="stylesheet" href="style.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <div id="boot-overlay" class="boot-overlay" aria-live="polite" aria-label="System boot sequence">
+      <div class="boot-scanlines" aria-hidden="true"></div>
+      <div id="boot-lines" class="boot-lines" aria-live="polite"></div>
+    </div>
+    <section id="onboarding-overlay" class="onboarding-overlay" hidden aria-labelledby="onboarding-title">
+      <div class="onboarding-card" role="dialog" aria-modal="true">
+        <span class="section-kicker">FIRST INSTALL // LOCAL SETUP</span>
+        <h2 id="onboarding-title">WELCOME TO THE NODE</h2>
+        <p class="onboarding-lead">Your private bookmark workspace is ready. Everything below stays on this device.</p>
+        <ol class="onboarding-steps">
+          <li><strong>BOOKMARKS</strong><span>Browse and manage your Chrome bookmark network.</span></li>
+          <li><strong>WIDGETS</strong><span>Use TASKS, NOTES and presets from VISUAL SYSTEM.</span></li>
+          <li><strong>SHORTCUTS</strong><span>Launch AI and custom services with one click.</span></li>
+        </ol>
+        <button id="onboarding-close" class="settings-action onboarding-close" type="button">ENTER DASHBOARD</button>
+      </div>
+    </section>
+    <section id="command-palette" class="command-palette" hidden aria-labelledby="command-palette-title">
+      <div class="command-palette-card" role="dialog" aria-modal="true">
+        <div class="command-palette-heading">
+          <span class="section-kicker">LOCAL COMMAND // CTRL + K</span>
+          <button id="command-palette-close" class="command-palette-close" type="button" aria-label="Close command palette">×</button>
+        </div>
+        <h2 id="command-palette-title">COMMAND PALETTE</h2>
+        <input id="command-palette-input" class="settings-input" type="search" placeholder="Search local actions..." autocomplete="off" />
+        <div id="command-palette-actions" class="command-palette-actions"></div>
+      </div>
+    </section>
+
+    <div class="background-glitch" aria-hidden="true"></div>
+    <div class="background-mark background-mark--daemon" aria-hidden="true">デーモン</div>
+    <div class="background-mark background-mark--devil" aria-hidden="true">悪魔</div>
+
+    <main class="dashboard">
+      <aside class="telemetry-panel" aria-label="System telemetry">
+        <div class="telemetry-header">NODE SIGNALS</div>
+        <div class="telemetry-row">
+          <span>LINKS</span>
+          <strong id="telemetry-links">184</strong>
+        </div>
+        <div class="telemetry-row">
+          <span>NODE IP</span>
+          <strong id="telemetry-ip">10.24.8.41</strong>
+        </div>
+        <div class="telemetry-row">
+          <span>LATENCY</span>
+          <strong id="telemetry-latency">12ms</strong>
+        </div>
+        <div class="telemetry-progress">
+          <div class="telemetry-progress-labels">
+            <span>INTEGRITY</span>
+            <span id="telemetry-integrity">98.4%</span>
+          </div>
+          <div class="telemetry-bar"><span id="telemetry-bar-fill"></span></div>
+        </div>
+      </aside>
+
+      <section class="workspace">
+        <section class="hud widget-sortable" data-widget-id="hud" aria-label="Netrunner status">
+          <button class="widget-drag-handle" type="button" draggable="true" aria-label="Drag HUD widget to reorder">⋮⋮</button>
+          <h1 class="brand-title workspace-brand" data-glitch="DEMONTECH-BOOKMARKS">
+            <span class="brand-name" data-text="DEMONTECH-BOOKMARKS">DEMONTECH-BOOKMARKS</span>
+          </h1>
+          <div class="hud-meta">
+            <div class="hero-terminal" aria-label="Netrunner node status">
+              <span class="hero-terminal-line">ACCESS GRANTED</span>
+              <span class="hero-terminal-line">LINK ARCHIVE READY</span>
+              <span class="hero-terminal-line hero-terminal-line--muted">AWAITING INPUT<span class="terminal-cursor">_</span></span>
+            </div>
+            <div class="hero-signal">USER: <strong id="profile-name">RUNNER</strong> <span>● ONLINE</span></div>
+          </div>
+          <div class="hud-label">NIGHT CITY // DEMONTECH NODE</div>
+          <time id="hud-clock" class="hud-clock" datetime="" aria-live="off">00:00</time>
+          <div id="hud-date" class="hud-date">LOADING DATE</div>
+          <div class="hud-status"><span>●</span> SYSTEM ONLINE</div>
+          <blockquote id="hud-quote" class="hud-quote">“The net remembers everything.”</blockquote>
+        </section>
+        <section class="ai-launcher widget-sortable" data-widget-id="shortcuts" aria-label="AI quick launch">
+          <button class="widget-drag-handle" type="button" draggable="true" aria-label="Drag shortcuts widget to reorder">⋮⋮</button>
+          <div class="search-shell">
+            <span class="search-prefix" aria-hidden="true">&gt;_</span>
+            <input
+              id="search-input"
+              type="search"
+              placeholder="Search Google..."
+              autocomplete="off"
+              spellcheck="false"
+              autofocus
+            />
+            <span class="search-shortcut" aria-hidden="true">CTRL + K</span>
+          </div>
+          <div class="ai-providers" role="group" aria-label="AI providers">
+            <button class="ai-provider ai-provider--chatgpt" type="button" data-provider="chatgpt">
+              <span class="ai-provider-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 3.5a8.5 8.5 0 1 0 0 17c1.7 0 3.2-.5 4.5-1.3l3 1 .2-3.3A8.4 8.4 0 0 0 12 3.5Z"/><path d="M8 14.5c1.6-1.1 3-2.8 3.8-5.1 1.3 1.6 2.7 2.7 4.5 3.3"/></svg>
+              </span>
+              <span>CHATGPT</span>
+              <span class="ai-provider-arrow" aria-hidden="true">↗</span>
+            </button>
+            <button class="ai-provider ai-provider--gemini" type="button" data-provider="gemini">
+              <span class="ai-provider-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="m12 2 1.9 7.1L21 11l-7.1 1.9L12 20l-1.9-7.1L3 11l7.1-1.9L12 2Z"/><path d="m19 16 .7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7L19 16Z"/></svg>
+              </span>
+              <span>GEMINI</span>
+              <span class="ai-provider-arrow" aria-hidden="true">↗</span>
+            </button>
+            <button class="ai-provider ai-provider--claude" type="button" data-provider="claude">
+              <span class="ai-provider-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>
+              </span>
+              <span>CLAUDE</span>
+              <span class="ai-provider-arrow" aria-hidden="true">↗</span>
+            </button>
+            <button class="ai-provider ai-provider--youtube" type="button" data-default-shortcut="youtube">
+              <span class="ai-provider-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M21 8.2a2.8 2.8 0 0 0-2-2C17.2 5.7 12 5.7 12 5.7s-5.2 0-7 .5a2.8 2.8 0 0 0-2 2A29 29 0 0 0 2.5 12 29 29 0 0 0 3 15.8a2.8 2.8 0 0 0 2 2c1.8.5 7 .5 7 .5s5.2 0 7-.5a2.8 2.8 0 0 0 2-2 29 29 0 0 0 .5-3.8 29 29 0 0 0-.5-3.8Z"/><path d="m10 9 5 3-5 3V9Z"/></svg>
+              </span>
+              <span>YOUTUBE</span>
+              <span class="ai-provider-arrow" aria-hidden="true">↗</span>
+            </button>
+            <button class="ai-provider ai-provider--instagram" type="button" data-default-shortcut="instagram">
+              <span class="ai-provider-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.7" r="1" fill="currentColor" stroke="none"/></svg>
+              </span>
+              <span>INSTAGRAM</span>
+              <span class="ai-provider-arrow" aria-hidden="true">↗</span>
+            </button>
+            <button class="ai-provider ai-provider--github" type="button" data-default-shortcut="github">
+              <span class="ai-provider-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 2.8a9.2 9.2 0 0 0-2.9 17.9c.5.1.7-.2.7-.5v-1.8c-2.8.6-3.4-1.2-3.4-1.2-.5-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 0 1.5 1 1.5 1 .9 1.5 2.3 1.1 2.9.9.1-.7.4-1.1.6-1.3-2.2-.2-4.5-1.1-4.5-4.9 0-1.1.4-2 .9-2.7-.1-.2-.4-1.3.1-2.7 0 0 1-.3 2.8 1a9.7 9.7 0 0 1 5.1 0c1.8-1.2 2.8-1 2.8-1 .5 1.4.2 2.5.1 2.7.6.7.9 1.6.9 2.7 0 3.8-2.3 4.7-4.5 4.9.4.3.7 1 .7 1.9v2.8c0 .3.2.6.7.5A9.2 9.2 0 0 0 12 2.8Z"/></svg>
+              </span>
+              <span>GITHUB</span>
+              <span class="ai-provider-arrow" aria-hidden="true">↗</span>
+            </button>
+            <button id="quick-add-ai-button" class="ai-provider ai-provider--add" type="button">
+              <span class="ai-provider-icon" aria-hidden="true">+</span>
+              <span>ADD LINK</span>
+            </button>
+          </div>
+        </section>
+
+        <section class="productivity-grid widget-sortable" data-widget-id="productivity" aria-label="Local productivity widgets">
+          <button class="widget-drag-handle" type="button" draggable="true" aria-label="Drag productivity widgets to reorder">⋮⋮</button>
+          <article id="tasks-widget" class="productivity-widget">
+            <div class="widget-heading">
+              <span class="section-kicker">LOCAL QUEUE</span>
+              <span class="widget-status">OFFLINE // PRIVATE</span>
+            </div>
+            <h2>TASKS</h2>
+            <form id="task-form" class="task-form">
+              <input id="task-input" class="settings-input" type="text" maxlength="120" placeholder="Add a task..." autocomplete="off" />
+              <button class="settings-action" type="submit">ADD</button>
+            </form>
+            <ul id="task-list" class="task-list" aria-live="polite"></ul>
+          </article>
+          <article id="notes-widget" class="productivity-widget">
+            <div class="widget-heading">
+              <span class="section-kicker">LOCAL BUFFER</span>
+              <span class="widget-status">AUTOSAVE</span>
+            </div>
+            <h2>NOTES</h2>
+            <textarea id="notes-input" class="notes-input" maxlength="3000" placeholder="Write a private note..."></textarea>
+          </article>
+        </section>
+
+        <section class="bookmarks-section widget-sortable" data-widget-id="bookmarks" aria-labelledby="bookmarks-title">
+          <button class="widget-drag-handle" type="button" draggable="true" aria-label="Drag bookmarks widget to reorder">⋮⋮</button>
+          <div class="board-bar">
+            <span class="board-bar-arrow" aria-hidden="true">‹</span>
+            <nav id="board-nav" class="board-nav" aria-label="Bookmark boards"></nav>
+            <span class="board-bar-arrow" aria-hidden="true">›</span>
+          </div>
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">ACTIVE BOARD</p>
+              <h2 id="bookmarks-title">Recent connections</h2>
+            </div>
+            <span id="bookmark-count" class="bookmark-count">SCANNING...</span>
+          </div>
+          <div id="bookmarks-grid" class="bookmarks-grid" aria-live="polite"></div>
+          <p id="empty-state" class="empty-state" hidden>No signals found in the network.</p>
+        </section>
+        <section class="settings-panel widget-sortable" data-widget-id="settings" aria-label="Visual themes">
+          <button class="widget-drag-handle" type="button" draggable="true" aria-label="Drag settings widget to reorder">⋮⋮</button>
+          <button id="settings-toggle" class="settings-toggle" type="button" aria-expanded="false">
+            <span aria-hidden="true">⚙</span>
+            <span>VISUAL SYSTEM</span>
+            <span class="settings-plus" aria-hidden="true">+</span>
+          </button>
+          <div id="settings-content" class="settings-content" hidden>
+            <div class="setting-row">
+              <span class="settings-label">CUSTOM AI SHORTCUTS</span>
+              <div class="settings-input-row">
+                <input id="custom-ai-name-input" class="settings-input" type="text" maxlength="20" placeholder="SERVICE NAME" />
+                <input id="custom-ai-url-input" class="settings-input" type="url" maxlength="300" placeholder="https://example.com" />
+                <button id="add-custom-ai-button" class="settings-action" type="button">ADD</button>
+              </div>
+              <div id="custom-ai-list" class="custom-ai-list" aria-live="polite"></div>
+            </div>
+            <div class="setting-row">
+              <label class="settings-label" for="display-name-input">DISPLAY NAME</label>
+              <div class="settings-input-row">
+                <input id="display-name-input" class="settings-input" type="text" maxlength="32" placeholder="AUTO PROFILE NAME" />
+                <button id="save-name-button" class="settings-action" type="button">SAVE</button>
+              </div>
+              <button id="reset-name-button" class="settings-reset" type="button">USE AUTO PROFILE NAME</button>
+            </div>
+            <div class="setting-row">
+              <label class="settings-label" for="brand-name-input">CUSTOM BRAND</label>
+              <div class="settings-input-row">
+                <input id="brand-name-input" class="settings-input" type="text" maxlength="32" placeholder="DEMONTECH-BOOKMARKS" />
+                <button id="save-brand-name-button" class="settings-action" type="button">SAVE</button>
+              </div>
+              <button id="reset-brand-name-button" class="settings-reset" type="button">RESET BRAND NAME</button>
+            </div>
+            <div class="setting-row">
+              <label class="settings-label" for="background-intensity">BACKGROUND INTENSITY</label>
+              <input id="background-intensity" class="settings-range" type="range" min="0.35" max="1" step="0.05" value="1" />
+            </div>
+            <div class="setting-row">
+              <label class="settings-label" for="background-file-input">LOCAL BACKGROUND</label>
+              <input id="background-file-input" class="settings-file" type="file" accept="image/png,image/jpeg,image/webp" />
+              <button id="reset-background-button" class="settings-reset" type="button">RESTORE DEFAULT BACKGROUND</button>
+              <span id="background-file-status" class="settings-hint">DEFAULT CITY NODE</span>
+            </div>
+            <label class="settings-check">
+              <input id="hud-toggle" type="checkbox" checked />
+              <span>SHOW HUD CLOCK</span>
+            </label>
+            <label class="settings-check">
+              <input id="quotes-toggle" type="checkbox" checked />
+              <span>SHOW NETRUNNER MESSAGES</span>
+            </label>
+            <div class="setting-row">
+              <label class="settings-label" for="typing-speed">MESSAGE TYPING SPEED</label>
+              <input id="typing-speed" class="settings-range" type="range" min="35" max="180" step="5" value="82" />
+            </div>
+            <label class="settings-check">
+              <input id="reduced-motion-toggle" type="checkbox" />
+              <span>REDUCE MOTION EFFECTS</span>
+            </label>
+            <label class="settings-check">
+              <input id="tasks-widget-toggle" type="checkbox" checked />
+              <span>SHOW TASKS WIDGET</span>
+            </label>
+            <label class="settings-check">
+              <input id="notes-widget-toggle" type="checkbox" checked />
+              <span>SHOW NOTES WIDGET</span>
+            </label>
+            <label class="settings-check">
+              <input id="move-controls-toggle" type="checkbox" />
+              <span>EDIT LAYOUT // SHOW MOVE CONTROLS</span>
+            </label>
+            <span class="settings-label">WIDGET PROTOCOL</span>
+            <span class="settings-hint">ENABLE MOVE CONTROLS TO REORDER PANELS</span>
+            <span class="settings-label">WIDGET SIZE</span>
+            <div id="widget-size-list" class="theme-list" role="group" aria-label="Widget size">
+              <button class="theme-button widget-size-option" type="button" data-widget-size="compact">SMALL</button>
+              <button class="theme-button widget-size-option" type="button" data-widget-size="balanced">MEDIUM</button>
+              <button class="theme-button widget-size-option" type="button" data-widget-size="expanded">LARGE</button>
+            </div>
+            <span class="settings-label">GRID COLUMNS</span>
+            <div id="column-list" class="theme-list" role="group" aria-label="Dashboard columns">
+              <button class="theme-button column-option" type="button" data-columns="1">ONE</button>
+              <button class="theme-button column-option" type="button" data-columns="2">TWO</button>
+              <button class="theme-button column-option" type="button" data-columns="3">THREE</button>
+            </div>
+            <div id="widget-presets" class="theme-list" role="group" aria-label="Widget presets">
+              <button class="theme-button widget-preset" type="button" data-preset="full">FULL HUD</button>
+              <button class="theme-button widget-preset" type="button" data-preset="focus">FOCUS MODE</button>
+              <button class="theme-button widget-preset" type="button" data-preset="command">COMMAND CENTER</button>
+              <button class="theme-button widget-preset" type="button" data-preset="minimal">MINIMAL GLASS</button>
+            </div>
+            <span class="settings-label">INTERFACE DENSITY</span>
+            <div id="density-list" class="theme-list" role="group" aria-label="Interface density">
+              <button class="theme-button density-option" type="button" data-density="compact">COMPACT</button>
+              <button class="theme-button density-option" type="button" data-density="balanced">BALANCED</button>
+              <button class="theme-button density-option" type="button" data-density="expanded">EXPANDED</button>
+            </div>
+            <span class="settings-label">COLOR PROTOCOL</span>
+            <div id="theme-list" class="theme-list" role="group" aria-label="Color themes">
+              <button class="theme-button" type="button" data-theme="electric-purple">ELECTRIC PURPLE</button>
+              <button class="theme-button" type="button" data-theme="neon-pink">NEON PINK</button>
+              <button class="theme-button" type="button" data-theme="night-city">NIGHT CITY</button>
+              <button class="theme-button" type="button" data-theme="black-ice">BLACK ICE</button>
+            </div>
+            <div class="setting-row">
+              <label class="settings-label" for="glass-opacity">GLASS TRANSPARENCY</label>
+              <input id="glass-opacity" class="settings-range" type="range" min="0.25" max="0.85" step="0.05" value="0.58" />
+              <span id="glass-opacity-status" class="settings-hint">58% SURFACE OPACITY</span>
+            </div>
+            <div class="setting-row about-section">
+              <span class="settings-label">ABOUT // CONTACT</span>
+              <p class="about-copy">DEMONTECH-BOOKMARKS // VERSION 1.0.0</p>
+              <p class="about-copy">Found a bug, visual glitch or broken shortcut? Generate a local report, review it, then copy it to your preferred contact channel.</p>
+              <textarea id="bug-report-input" class="notes-input bug-report-input" maxlength="2000" placeholder="Describe the bug or error..."></textarea>
+              <div class="settings-input-row">
+                <button id="copy-bug-report-button" class="settings-action" type="button">COPY REPORT</button>
+                <button id="show-tutorial-button" class="settings-reset" type="button">SHOW TUTORIAL</button>
+              </div>
+              <span id="bug-report-status" class="settings-hint">NO REPORT GENERATED</span>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

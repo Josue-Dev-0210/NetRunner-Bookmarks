@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Default bookmark icon">
+  <rect width="64" height="64" rx="10" fill="#0b0b0b"/>
+  <path d="M18 14h28v36l-14-8-14 8z" fill="#b026ff"/>
+  <path d="M22 19h20" stroke="#ff003c" stroke-width="3"/>
+</svg>
