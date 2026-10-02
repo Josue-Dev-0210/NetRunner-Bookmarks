@@ -1,10 +1,9 @@
-const searchInput = document.querySelector("#search-input");
 const bookmarksGrid = document.querySelector("#bookmarks-grid");
 const emptyState = document.querySelector("#empty-state");
 const bookmarkCount = document.querySelector("#bookmark-count");
 const boardNav = document.querySelector("#board-nav");
 const bookmarksTitle = document.querySelector("#bookmarks-title");
-const aiProviders = document.querySelectorAll(".ai-provider");
+const bookmarksSection = document.querySelector(".bookmarks-section");
 const settingsToggle = document.querySelector("#settings-toggle");
 const settingsContent = document.querySelector("#settings-content");
 const settingsPanel = document.querySelector(".settings-panel");
@@ -31,10 +30,18 @@ const customAiNameInput = document.querySelector("#custom-ai-name-input");
 const customAiUrlInput = document.querySelector("#custom-ai-url-input");
 const addCustomAiButton = document.querySelector("#add-custom-ai-button");
 const customAiList = document.querySelector("#custom-ai-list");
-const quickAddAiButton = document.querySelector("#quick-add-ai-button");
+const customAiStatus = document.querySelector("#custom-ai-status");
 const defaultShortcutButtons = document.querySelectorAll("[data-default-shortcut]");
 const hudClock = document.querySelector("#hud-clock");
-const hudDate = document.querySelector("#hud-date");
+const clockReadout = document.querySelector(".clock-readout");
+const clockHours = document.querySelector("#clock-hours");
+const clockMinutes = document.querySelector("#clock-minutes");
+const clockSeconds = document.querySelector("#clock-seconds");
+const clockPeriod = document.querySelector("#clock-period");
+const clockTimezone = document.querySelector("#clock-timezone");
+const clockMinuteProgress = document.querySelector("#clock-minute-progress");
+const hudWeekday = document.querySelector("#hud-weekday");
+const hudDateValue = document.querySelector("#hud-date-value");
 const hudQuote = document.querySelector("#hud-quote");
 const profileName = document.querySelector("#profile-name");
 const bootOverlay = document.querySelector("#boot-overlay");
@@ -45,7 +52,6 @@ const telemetryLatency = document.querySelector("#telemetry-latency");
 const telemetryIntegrity = document.querySelector("#telemetry-integrity");
 const telemetryBarFill = document.querySelector("#telemetry-bar-fill");
 const telemetryPanel = document.querySelector(".telemetry-panel");
-const aiProvidersContainer = document.querySelector(".ai-providers");
 const tasksWidget = document.querySelector("#tasks-widget");
 const notesWidget = document.querySelector("#notes-widget");
 const taskForm = document.querySelector("#task-form");
@@ -72,13 +78,12 @@ const profileStatus = document.querySelector("#profile-status");
 const keyboardShortcutsList = document.querySelector("#keyboard-shortcuts-list");
 const resetShortcutsButton = document.querySelector("#reset-shortcuts-button");
 const shortcutStatus = document.querySelector("#shortcut-status");
-const commandPalette = document.querySelector("#command-palette");
-const commandPaletteInput = document.querySelector("#command-palette-input");
-const commandPaletteActions = document.querySelector("#command-palette-actions");
-const commandPaletteClose = document.querySelector("#command-palette-close");
 const onboardingOverlay = document.querySelector("#onboarding-overlay");
 const onboardingClose = document.querySelector("#onboarding-close");
+const onboardingOrganizeButton = document.querySelector("#onboarding-organize");
 const showTutorialButton = document.querySelector("#show-tutorial-button");
+const simpleModeToggle = document.querySelector("#simple-mode-toggle");
+const fullScreenLayoutToggle = document.querySelector("#full-screen-layout-toggle");
 const bugReportInput = document.querySelector("#bug-report-input");
 const copyBugReportButton = document.querySelector("#copy-bug-report-button");
 const emailBugReportButton = document.querySelector("#email-bug-report-button");
@@ -86,18 +91,44 @@ const bugReportStatus = document.querySelector("#bug-report-status");
 const widgetPresetButtons = document.querySelectorAll(".widget-preset");
 const densityButtons = document.querySelectorAll(".density-option");
 const workspace = document.querySelector(".workspace");
+const navbarSearchInput = document.querySelector("#navbar-search-input");
+const navbarSearchToggle = document.querySelector("#navbar-search-toggle");
+const navbarSearchRegion = document.querySelector("#navbar-search-region");
+const navbarContainer = document.querySelector(".navbar-container");
+const shortcutsNavbar = document.querySelector("#shortcuts-navbar");
+const navbarDropdownTrigger = document.querySelector("#navbar-dropdown-trigger");
+const navbarDropdownMenu = document.querySelector("#navbar-dropdown-menu");
+const navbarCustomAiList = document.querySelector("#navbar-custom-ai-list");
+const navbarAddCustomAi = document.querySelector("#navbar-add-custom-ai");
+const navbarOpenSettings = document.querySelector("#navbar-open-settings");
+const aiProviderDropdownItems = document.querySelectorAll(".navbar-dropdown-menu .dropdown-item.ai-provider");
+const defaultShortcutDropdownItems = document.querySelectorAll(".navbar-dropdown-menu .dropdown-item[data-default-shortcut]");
 const sortableWidgets = document.querySelectorAll(".widget-sortable");
 const widgetElements = {
   hud: document.querySelector(".hud"),
   telemetry: document.querySelector(".telemetry-panel"),
-  shortcuts: document.querySelector(".ai-providers"),
   productivity: document.querySelector(".productivity-grid"),
   bookmarks: document.querySelector(".bookmarks-section"),
 };
 
+navbarSearchToggle?.addEventListener("click", () => {
+  const expanded = navbarSearchToggle.getAttribute("aria-expanded") !== "true";
+  navbarSearchToggle.setAttribute("aria-expanded", String(expanded));
+  navbarSearchToggle.setAttribute("aria-label", expanded ? "Hide Google search" : "Show Google search");
+  navbarSearchToggle.title = expanded ? "Hide Google search" : "Show Google search";
+  navbarSearchRegion?.classList.toggle("is-collapsed", !expanded);
+  if (navbarSearchRegion) navbarSearchRegion.inert = !expanded;
+  navbarContainer?.classList.toggle("is-search-collapsed", !expanded);
+  shortcutsNavbar?.classList.toggle("is-search-collapsed", !expanded);
+  document.documentElement.classList.toggle("search-navbar-collapsed", !expanded);
+  if (expanded) navbarSearchInput?.focus();
+});
+
 let bookmarkTree = [];
 let activeBoardId = "recent";
 let recentBookmarkCount = null;
+let collapseRecentOnFirstRender = true;
+let recentGridIsCollapsed = true;
 let dashboardProfiles = [];
 let keyboardShortcuts = {};
 let shortcutRecordingAction = null;
@@ -112,26 +143,38 @@ const maxBackgroundSize = 2 * 1024 * 1024;
 let widgetVisibility = {
   hud: true,
   telemetry: true,
-  shortcuts: true,
   productivity: true,
   bookmarks: true,
 };
-let widgetOrder = ["hud", "shortcuts", "productivity", "bookmarks"];
+let widgetOrder = ["hud", "productivity", "bookmarks"];
 let activeDensity = "balanced";
 let activeWidgetSize = "balanced";
 let activeColumns = "2";
 let activeLanguage = "en";
+let clockUses12Hour = false;
+let lastClockMinute = null;
+let minuteFlashTimer = null;
+
+const extensionChrome = globalThis.chrome;
+const getChromeStorage = () => extensionChrome?.storage?.local || null;
+const getChromeBookmarks = () => extensionChrome?.bookmarks || null;
+const getChromeRuntime = () => extensionChrome?.runtime || null;
+const getChromeRuntimeLastError = () => getChromeRuntime()?.lastError || null;
+
+function isExtensionContext() {
+  return Boolean(extensionChrome);
+}
 
 const defaultShortcuts = [
-  { id: "youtube", name: "YOUTUBE", url: "https://www.youtube.com/" },
-  { id: "instagram", name: "INSTAGRAM", url: "https://www.instagram.com/" },
-  { id: "github", name: "GITHUB", url: "https://github.com/" },
+  { id: "chatgpt", name: "CHATGPT", url: "https://chatgpt.com/", provider: "chatgpt" },
+  { id: "gemini", name: "GEMINI", url: "https://gemini.google.com/app", provider: "gemini" },
+  { id: "claude", name: "CLAUDE", url: "https://claude.ai/new", provider: "claude" },
+  { id: "youtube", name: "YOUTUBE", url: "https://www.youtube.com/", provider: "youtube" },
+  { id: "instagram", name: "INSTAGRAM", url: "https://www.instagram.com/", provider: "instagram" },
+  { id: "github", name: "GITHUB", url: "https://github.com/", provider: "github" },
 ];
-const shortcutScrollThreshold = 5;
-
-if (telemetryPanel && aiProvidersContainer) {
-  telemetryPanel.append(aiProvidersContainer);
-}
+const maxCustomAiShortcuts = 60;
+const shortcutScrollThreshold = 9;
 
 function applyWidgetOrder(order = widgetOrder) {
   if (!workspace) return;
@@ -265,6 +308,16 @@ function applyColumns(columns = "2") {
   });
 }
 
+function applyDensity(density = "balanced") {
+  const validDensities = ["compact", "balanced", "expanded"];
+  if (!validDensities.includes(density)) return;
+  activeDensity = density;
+  document.documentElement.dataset.density = density;
+  densityButtons.forEach((button) => {
+    button.classList.toggle("is-selected", button.dataset.density === density);
+  });
+}
+
 function applyGlassOpacity(value = "0.58") {
   const opacity = Math.min(0.85, Math.max(0.25, Number(value) || 0.58));
   document.documentElement.style.setProperty("--glass-opacity", opacity);
@@ -287,6 +340,28 @@ function applyIconSize(value = 32) {
 }
 
 const translations = {
+  "QUICK START // ORGANIZE YOUR SPACE": "INICIO RÁPIDO // ORGANIZA TU ESPACIO",
+  "YOUR DASHBOARD, YOUR WAY": "TU PANEL, A TU MANERA",
+  "Start with a clean workspace. Add only the panels you need; your bookmarks and settings stay on this device.": "Empieza con un espacio limpio. Añade solo los paneles que necesites; tus marcadores y ajustes se quedan en este dispositivo.",
+  "01 // BOOKMARKS": "01 // MARCADORES",
+  "Use the board tabs to switch between Recent, Bookmarks Bar and folders. Add folders or links from the active board, then drag links into folders.": "Usa las pestañas para cambiar entre Recientes, Barra de marcadores y carpetas. Añade carpetas o enlaces desde el tablero activo y arrastra enlaces dentro de las carpetas.",
+  "02 // SHOW WHAT YOU NEED": "02 // MUESTRA LO QUE NECESITAS",
+  "Open VISUAL SYSTEM. Turn off simplified mode to reveal the HUD, NODE SIGNALS, tasks and notes. Use widget presets to change panels together, and the top-bar magnifier to collapse or expand Google search.": "Abre SISTEMA VISUAL y desactiva PANEL SIMPLIFICADO para mostrar HUD, SEÑALES DEL NODO, tareas y notas. Usa los preajustes para cambiar varios paneles y la lupa superior para contraer o desplegar la búsqueda de Google.",
+  "03 // ARRANGE PANELS": "03 // ORDENA LOS PANELES",
+  "Enable “SHOW MOVE CONTROLS”, then drag a panel by its dotted handle. Save a dashboard profile when you like the layout.": "Activa «EDITAR DISEÑO // MOSTRAR CONTROLES», luego arrastra los paneles desde el control punteado. Guarda un perfil cuando te guste el diseño.",
+  "04 // QUICK SHORTCUTS": "04 // ACCESOS DIRECTOS",
+  "Click an icon in NODE SIGNALS to open its service. Use the + tile to add a shortcut; this opens VISUAL SYSTEM // CUSTOM AI SHORTCUTS, where you can add up to 60 HTTPS links with a name, remove custom links, or hide and restore built-in shortcuts.": "Haz clic en un icono de SEÑALES DEL NODO para abrir el servicio. Usa el botón + para agregar un acceso; abrirá SISTEMA VISUAL // ACCESOS PERSONALIZADOS, donde puedes añadir hasta 60 enlaces HTTPS con nombre, quitar enlaces personalizados u ocultar y restaurar los accesos incluidos.",
+  "ADD SHORTCUT": "AÑADIR ACCESO",
+  "Recent connections are collapsed by default. Select the Recent tab to expand or collapse them.": "Las conexiones recientes aparecen retraídas por defecto. Selecciona la pestaña Recientes para desplegarlas o retraerlas.",
+  "LOCAL SYSTEM TIME": "HORA LOCAL DEL SISTEMA",
+  "LIVE": "EN VIVO",
+  "LOCAL ZONE": "ZONA LOCAL",
+  "Enter a name and a valid HTTPS URL.": "Escribe un nombre y una URL HTTPS válida.",
+  "Maximum of 60 custom shortcuts reached.": "Se alcanzó el máximo de 60 accesos personalizados.",
+  "START ORGANIZING": "EMPEZAR A ORGANIZAR",
+  "CLOSE TUTORIAL": "CERRAR TUTORIAL",
+  "SIMPLIFIED DASHBOARD": "PANEL SIMPLIFICADO",
+  "FULL SCREEN LAYOUT": "DISEÑO A PANTALLA COMPLETA",
   "LOCAL DATA // EXPORT & IMPORT": "DATOS LOCALES // EXPORTAR E IMPORTAR",
   "Exports include local notes and tasks. Review the JSON before sharing it.": "Las exportaciones incluyen notas y tareas locales. Revisa el JSON antes de compartirlo.",
   "EXPORT JSON": "EXPORTAR JSON",
@@ -378,9 +453,6 @@ const translations = {
   "LINK ARCHIVE READY": "ARCHIVO DE ENLACES LISTO",
   "AWAITING INPUT": "ESPERANDO ENTRADA",
   "Search Google...": "Buscar en Google...",
-  "Search local actions...": "Buscar acciones locales...",
-  "LOCAL COMMAND // CTRL + K": "COMANDO LOCAL // CTRL + K",
-  "COMMAND PALETTE": "PALETA DE COMANDOS",
   "TASKS": "TAREAS",
   "NOTES": "NOTAS",
   "Add a task...": "Añadir una tarea...",
@@ -488,7 +560,6 @@ const additionalTranslations = {
     EDIT: "MODIFIER", DELETE: "SUPPRIMER", RENAME: "RENOMMER", "RECENT": "RÉCENT",
     DEFAULT: "PAR DÉFAUT", RESTORE: "RESTAURER", REMOVE: "RETIRER",
     "BOOKMARKS BAR": "BARRE DE FAVORIS", "OTHER BOOKMARKS": "AUTRES FAVORIS",
-    "Search local actions...": "Rechercher une action locale...", "COMMAND PALETTE": "PALETTE DE COMMANDES",
   },
   de: {
     "VISUAL SYSTEM": "VISUELLES SYSTEM", LANGUAGE: "SPRACHE", "ICON SIZE": "SYMBOLGRÖSSE",
@@ -527,7 +598,6 @@ const additionalTranslations = {
     EDIT: "BEARBEITEN", DELETE: "LÖSCHEN", RENAME: "UMBENENNEN", RECENT: "NEUESTE",
     DEFAULT: "STANDARD", RESTORE: "WIEDERHERSTELLEN", REMOVE: "ENTFERNEN",
     "BOOKMARKS BAR": "LESEZEICHNENLEISTE", "OTHER BOOKMARKS": "WEITERE LESEZEICHEN",
-    "Search local actions...": "Lokale Aktionen suchen...", "COMMAND PALETTE": "BEFEHLSPALETTE",
   },
   pt: {
     "VISUAL SYSTEM": "SISTEMA VISUAL", LANGUAGE: "IDIOMA", "ICON SIZE": "TAMANHO DOS ÍCONES",
@@ -566,7 +636,6 @@ const additionalTranslations = {
     EDIT: "EDITAR", DELETE: "EXCLUIR", RENAME: "RENOMEAR", RECENT: "RECENTES",
     DEFAULT: "PADRÃO", RESTORE: "RESTAURAR", REMOVE: "REMOVER",
     "BOOKMARKS BAR": "BARRA DE FAVORITOS", "OTHER BOOKMARKS": "OUTROS FAVORITOS",
-    "Search local actions...": "Pesquisar ações locais...", "COMMAND PALETTE": "PALETA DE COMANDOS",
   },
   it: {
     "VISUAL SYSTEM": "SISTEMA VISIVO", LANGUAGE: "LINGUA", "ICON SIZE": "DIMENSIONE ICONE",
@@ -605,7 +674,6 @@ const additionalTranslations = {
     EDIT: "MODIFICA", DELETE: "ELIMINA", RENAME: "RINOMINA", RECENT: "RECENTI",
     DEFAULT: "PREDEFINITO", RESTORE: "RIPRISTINA", REMOVE: "RIMUOVI",
     "BOOKMARKS BAR": "BARRA DEI PREFERITI", "OTHER BOOKMARKS": "ALTRI PREFERITI",
-    "Search local actions...": "Cerca azioni locali...", "COMMAND PALETTE": "PALETTE COMANDI",
   },
   ja: {
     "VISUAL SYSTEM": "ビジュアル設定", LANGUAGE: "言語", "ICON SIZE": "アイコンサイズ",
@@ -644,7 +712,6 @@ const additionalTranslations = {
     "OPEN LINK ↗": "リンクを開く ↗", EDIT: "編集", DELETE: "削除", RENAME: "名前を変更",
     DEFAULT: "デフォルト", RESTORE: "復元", REMOVE: "削除",
     RECENT: "最近", "BOOKMARKS BAR": "ブックマークバー", "OTHER BOOKMARKS": "その他のブックマーク",
-    "Search local actions...": "操作を検索...", "COMMAND PALETTE": "コマンドパレット",
   },
   zh: {
     "VISUAL SYSTEM": "视觉系统", LANGUAGE: "语言", "ICON SIZE": "图标大小",
@@ -676,7 +743,6 @@ const additionalTranslations = {
     EDIT: "编辑", DELETE: "删除", RENAME: "重命名", RECENT: "最近",
     DEFAULT: "默认", RESTORE: "恢复", REMOVE: "移除",
     "BOOKMARKS BAR": "书签栏", "OTHER BOOKMARKS": "其他书签",
-    "Search local actions...": "搜索操作...", "COMMAND PALETTE": "命令面板",
   },
   ko: {
     "VISUAL SYSTEM": "비주얼 시스템", LANGUAGE: "언어", "ICON SIZE": "아이콘 크기",
@@ -714,7 +780,6 @@ const additionalTranslations = {
     EDIT: "수정", DELETE: "삭제", RENAME: "이름 변경", RECENT: "최근",
     DEFAULT: "기본값", RESTORE: "복원", REMOVE: "제거",
     "BOOKMARKS BAR": "북마크바", "OTHER BOOKMARKS": "기타 북마크",
-    "Search local actions...": "작업 검색...", "COMMAND PALETTE": "명령 팔레트",
   },
   ru: {
     "VISUAL SYSTEM": "ВИЗУАЛЬНАЯ СИСТЕМА", LANGUAGE: "ЯЗЫК", "ICON SIZE": "РАЗМЕР ЗНАЧКОВ",
@@ -753,7 +818,6 @@ const additionalTranslations = {
     EDIT: "ИЗМЕНИТЬ", DELETE: "УДАЛИТЬ", RENAME: "ПЕРЕИМЕНОВАТЬ", RECENT: "НЕДАВНИЕ",
     DEFAULT: "ПО УМОЛЧАНИЮ", RESTORE: "ВОССТАНОВИТЬ", REMOVE: "УБРАТЬ",
     "BOOKMARKS BAR": "ПАНЕЛЬ ЗАКЛАДОК", "OTHER BOOKMARKS": "ДРУГИЕ ЗАКЛАДКИ",
-    "Search local actions...": "Поиск действий...", "COMMAND PALETTE": "ПАЛИТРА КОМАНД",
   },
 };
 
@@ -853,7 +917,6 @@ function applyLanguage(language = "en", persist = true) {
 
 languageSelect?.addEventListener("change", () => {
   applyLanguage(languageSelect.value);
-  if (commandPalette && !commandPalette.hidden) renderCommandActions(commandPaletteInput?.value || "");
 });
 iconSizeInput?.addEventListener("input", () => {
   applyIconSize(iconSizeInput.value);
@@ -885,6 +948,18 @@ function hideOnboarding() {
 }
 
 onboardingClose?.addEventListener("click", hideOnboarding);
+onboardingOrganizeButton?.addEventListener("click", () => {
+  applyUserSettings({ simplifiedMode: false });
+  saveUserSettings({ simplifiedMode: false, onboardingComplete: true });
+  if (settingsContent) settingsContent.hidden = false;
+  settingsToggle?.setAttribute("aria-expanded", "true");
+  settingsPanel?.classList.add("is-open");
+  if (moveControlsToggle) {
+    moveControlsToggle.checked = true;
+    moveControlsToggle.dispatchEvent(new Event("change"));
+  }
+  if (onboardingOverlay) onboardingOverlay.hidden = true;
+});
 showTutorialButton?.addEventListener("click", showOnboarding);
 onboardingOverlay?.addEventListener("keydown", (event) => {
   if (event.key === "Escape") hideOnboarding();
@@ -976,31 +1051,99 @@ function createShortcutIcon(name) {
 }
 
 function renderCustomAiShortcuts() {
-  const container = document.querySelector(".ai-providers");
-  if (!container) return;
+  if (customAiStatus) {
+    customAiStatus.textContent = `${customAiShortcuts.length} / ${maxCustomAiShortcuts} ${translateValue("CUSTOM AI SHORTCUTS", activeLanguage)}`;
+    customAiStatus.classList.remove("is-error");
+  }
+  if (addCustomAiButton) {
+    addCustomAiButton.disabled = customAiShortcuts.length >= maxCustomAiShortcuts;
+  }
 
-  defaultShortcutButtons.forEach((button) => {
+  // Update default shortcut buttons visibility in navbar dropdown
+  defaultShortcutDropdownItems.forEach((button) => {
     button.hidden = disabledDefaultShortcuts.includes(button.dataset.defaultShortcut);
   });
-  container.querySelectorAll(".ai-provider--custom").forEach((button) => button.remove());
-  customAiShortcuts.forEach((shortcut) => {
-    const button = document.createElement("button");
-    const icon = document.createElement("span");
-    const arrow = document.createElement("span");
-    button.className = "ai-provider ai-provider--custom";
-    button.type = "button";
-    icon.className = "ai-provider-icon";
-    icon.append(createShortcutIcon(shortcut.name));
-    arrow.className = "ai-provider-arrow";
-    arrow.textContent = "↗";
-    button.replaceChildren(icon, document.createTextNode(shortcut.name), arrow);
-    button.addEventListener("click", () => window.open(shortcut.url, "_blank", "noopener,noreferrer"));
-    container.insertBefore(button, quickAddAiButton || null);
-  });
-  telemetryPanel?.classList.toggle(
-    "has-shortcut-overflow",
-    [...container.querySelectorAll(".ai-provider")].filter((button) => !button.hidden).length > shortcutScrollThreshold
-  );
+
+  // Render shortcuts in telemetry panel (sidebar)
+  const telemetryProviders = document.querySelector(".telemetry-panel .ai-providers");
+  if (telemetryProviders) {
+    telemetryProviders.replaceChildren();
+
+    const defaultShortcutsVisible = defaultShortcuts.filter(
+      (s) => !disabledDefaultShortcuts.includes(s.id)
+    );
+
+    const allShortcuts = [
+      ...defaultShortcutsVisible.map((s) => ({ ...s, type: "default" })),
+      ...customAiShortcuts.map((s) => ({ ...s, type: "custom" })),
+    ];
+
+    allShortcuts.forEach((shortcut) => {
+      const button = document.createElement("button");
+      button.className = "ai-provider";
+      button.type = "button";
+
+      if (shortcut.type === "default") {
+        if (shortcut.provider) {
+          button.dataset.provider = shortcut.provider;
+          button.classList.add(`ai-provider--${shortcut.provider}`);
+        } else if (shortcut.id) {
+          button.dataset.defaultShortcut = shortcut.id;
+          button.classList.add(`ai-provider--${shortcut.id}`);
+        }
+      } else {
+        button.classList.add("ai-provider--custom");
+        button.dataset.custom = "true";
+      }
+
+      button.dataset.tooltip = shortcut.name;
+      button.setAttribute("aria-label", shortcut.name);
+      button.title = shortcut.name;
+
+      const icon = document.createElement("span");
+      icon.className = "ai-provider-icon";
+
+      if (shortcut.type === "custom") {
+        icon.append(createShortcutIcon(shortcut.name));
+      } else {
+        icon.append(createProviderIcon(shortcut.provider || shortcut.id));
+      }
+
+      button.replaceChildren(icon);
+
+      button.addEventListener("click", () => {
+        window.open(shortcut.url, "_blank", "noopener,noreferrer");
+      });
+
+      telemetryProviders.append(button);
+    });
+
+    const addShortcutButton = document.createElement("button");
+    const addShortcutIcon = document.createElement("span");
+    addShortcutButton.className = "ai-provider ai-provider--add";
+    addShortcutButton.type = "button";
+    addShortcutButton.dataset.tooltip = translateValue("ADD SHORTCUT", activeLanguage);
+    addShortcutButton.setAttribute("aria-label", translateValue("ADD SHORTCUT", activeLanguage));
+    addShortcutButton.title = translateValue("ADD SHORTCUT", activeLanguage);
+    addShortcutButton.disabled = customAiShortcuts.length >= maxCustomAiShortcuts;
+    addShortcutIcon.className = "ai-provider-add-icon";
+    addShortcutIcon.setAttribute("aria-hidden", "true");
+    addShortcutIcon.textContent = "+";
+    addShortcutButton.append(addShortcutIcon);
+    addShortcutButton.addEventListener("click", () => {
+      if (!settingsContent || !settingsToggle || !settingsPanel) return;
+      settingsContent.hidden = false;
+      settingsToggle.setAttribute("aria-expanded", "true");
+      settingsPanel.classList.add("is-open");
+      customAiNameInput?.focus();
+    });
+    telemetryProviders.append(addShortcutButton);
+
+    telemetryPanel?.classList.toggle(
+      "has-shortcut-overflow",
+      allShortcuts.length > shortcutScrollThreshold
+    );
+  }
 
   if (customAiList) {
     customAiList.replaceChildren();
@@ -1043,27 +1186,78 @@ function renderCustomAiShortcuts() {
       customAiList.append(row);
     });
   }
+
+  if (navbarCustomAiList) {
+    navbarCustomAiList.replaceChildren();
+    customAiShortcuts.forEach((shortcut, index) => {
+      const button = document.createElement("button");
+      button.className = "dropdown-item ai-provider ai-provider--custom";
+      button.type = "button";
+      button.role = "menuitem";
+      const icon = document.createElement("span");
+      icon.className = "ai-provider-icon";
+      icon.append(createShortcutIcon(shortcut.name));
+      const text = document.createTextNode(shortcut.name);
+      button.replaceChildren(icon, text);
+      button.addEventListener("click", (e) => {
+        e.stopPropagation();
+        window.open(shortcut.url, "_blank", "noopener,noreferrer");
+        navbarDropdownMenu.hidden = true;
+        navbarDropdownTrigger.setAttribute("aria-expanded", "false");
+      });
+      navbarCustomAiList.append(button);
+    });
+  }
+}
+
+function createProviderIcon(providerId) {
+  const svgNamespace = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(svgNamespace, "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("fill", "none");
+  svg.setAttribute("stroke", "currentColor");
+  svg.setAttribute("stroke-linecap", "round");
+  svg.setAttribute("stroke-linejoin", "round");
+  svg.setAttribute("stroke-width", "1.6");
+
+  const paths = {
+    chatgpt: ["M12 3.5a8.5 8.5 0 1 0 0 17c1.7 0 3.2-.5 4.5-1.3l3 1 .2-3.3A8.4 8.4 0 0 0 12 3.5Z", "M8 14.5c1.6-1.1 3-2.8 3.8-5.1 1.3 1.6 2.7 2.7 4.5 3.3"],
+    gemini: ["M12 2l1.9 7.1L21 11l-7.1 1.9L12 20l-1.9-7.1L3 11l7.1-1.9Z", "M19 16l.7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7Z"],
+    claude: ["M12 3v18", "M3 12h18", "M5.6 5.6l12.8 12.8", "M18.4 5.6L5.6 18.4"],
+    youtube: ["M21 8.2a2.8 2.8 0 0 0-2-2C17.2 5.7 12 5.7 12 5.7s-5.2 0-7 .5a2.8 2.8 0 0 0-2 2A29 29 0 0 0 2.5 12 29 29 0 0 0 3 15.8a2.8 2.8 0 0 0 2 2c1.8.5 7 .5 7 .5s5.2 0 7-.5a2.8 2.8 0 0 0 2-2 29 29 0 0 0 .5-3.8 29 29 0 0 0-.5-3.8Z", "M10 9l5 3-5 3V9Z"],
+    instagram: ["M3.5 3.5h17v17h-17Z", "M12 12c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8Z", "M17.5 6.7c-.6 0-1 .4-1 1s.4 1 1 1 1-.4 1-1-.4-1-1-1Z"],
+    github: ["M12 2.8A9.2 9.2 0 0 0 2.8 12c0 4.4 2.8 8.2 6.8 9.5.5.1.7-.2.7-.5v-1.8c-2.8.6-3.4-1.2-3.4-1.2-.5-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 0 1.5 1 1.5 1 .9 1.5 2.3 1.1 2.9.9.1-.7.4-1.1.6-1.3-2.2-.2-4.5-1.1-4.5-4.9 0-1.1.4-2 .9-2.7-.1-.2-.4-1.3.1-2.7 0 0 1-.3 2.8 1a9.7 9.7 0 0 1 5.1 0c1.8-1.2 2.8-1 2.8-1 .5 1.4.2 2.5.1 2.7.6.7.9 1.6.9 2.7 0 3.8-2.3 4.7-4.5 4.9.4.3.7 1 .7 1.9v2.8c0 .3.2.6.7.5A9.2 9.2 0 0 0 12 2.8Z"],
+  };
+
+  const pathData = paths[providerId] || paths.chatgpt;
+  pathData.forEach((d) => {
+    const path = document.createElementNS(svgNamespace, "path");
+    path.setAttribute("d", d);
+    svg.append(path);
+  });
+
+  return svg;
 }
 
 addCustomAiButton?.addEventListener("click", () => {
   const name = customAiNameInput.value.trim().replace(/\s+/g, " ");
   const url = getSafeExternalUrl(customAiUrlInput.value);
-  if (!name || !url) return;
+  if (!name || !url) {
+    showFeatureStatus(customAiStatus, "Enter a name and a valid HTTPS URL.", true);
+    return;
+  }
+  if (customAiShortcuts.length >= maxCustomAiShortcuts) {
+    showFeatureStatus(customAiStatus, "Maximum of 60 custom shortcuts reached.", true);
+    addCustomAiButton.disabled = true;
+    return;
+  }
 
   customAiShortcuts.push({ name, url });
   saveUserSettings({ customAiShortcuts });
   customAiNameInput.value = "";
   customAiUrlInput.value = "";
   renderCustomAiShortcuts();
-});
-
-quickAddAiButton?.addEventListener("click", () => {
-  if (settingsContent?.hidden) {
-    settingsContent.hidden = false;
-    settingsToggle?.setAttribute("aria-expanded", "true");
-    settingsPanel?.classList.add("is-open");
-  }
-  customAiNameInput?.focus();
 });
 
 function setProfileName(name) {
@@ -1091,12 +1285,21 @@ function applyBrandName(name) {
   }
 }
 
-chrome.storage?.local?.get("displayName", ({ displayName }) => {
-  setProfileName(displayName || autoProfileName);
+const storage = getChromeStorage();
+if (storage) {
+  storage.get("displayName", ({ displayName }) => {
+    setProfileName(displayName || autoProfileName);
+    if (displayNameInput) {
+      displayNameInput.value = displayName || "";
+    }
+  });
+} else {
+  const cachedDisplayName = localStorage.getItem("displayName") || "";
+  setProfileName(cachedDisplayName || autoProfileName);
   if (displayNameInput) {
-    displayNameInput.value = displayName || "";
+    displayNameInput.value = cachedDisplayName;
   }
-});
+}
 
 function runBootSequence() {
   if (!bootOverlay || !bootLines) {
@@ -1151,6 +1354,11 @@ window.setInterval(updateTelemetry, 1800);
 updateTelemetry();
 
 function applyUserSettings(settings = {}) {
+  if (typeof settings.clockUses12Hour === "boolean") {
+    clockUses12Hour = settings.clockUses12Hour;
+    updateHud();
+  }
+
   if (settings.backgroundIntensity && backgroundIntensity) {
     document.documentElement.style.setProperty(
       "--background-intensity",
@@ -1197,6 +1405,14 @@ function applyUserSettings(settings = {}) {
   const moveControlsVisible = settings.moveControlsVisible === true;
   document.documentElement.classList.toggle("move-controls-visible", moveControlsVisible);
   if (moveControlsToggle) moveControlsToggle.checked = moveControlsVisible;
+  if (typeof settings.simplifiedMode === "boolean") {
+    document.documentElement.classList.toggle("simplified-dashboard", settings.simplifiedMode);
+    if (simpleModeToggle) simpleModeToggle.checked = settings.simplifiedMode;
+  }
+  if (typeof settings.fullScreenLayout === "boolean") {
+    document.documentElement.classList.toggle("full-screen-layout", settings.fullScreenLayout);
+    if (fullScreenLayoutToggle) fullScreenLayoutToggle.checked = settings.fullScreenLayout;
+  }
   applyWidgetSize(settings.widgetSize || activeWidgetSize);
   applyColumns(settings.columns || activeColumns);
   applyGlassOpacity(settings.glassOpacity || "0.58");
@@ -1221,23 +1437,21 @@ function applyUserSettings(settings = {}) {
     delete document.documentElement.dataset.widgetPreset;
   }
 
-  function applyDensity(density) {
-    const validDensities = ["compact", "balanced", "expanded"];
-    if (!validDensities.includes(density)) return;
-    activeDensity = density;
-    document.documentElement.dataset.density = density;
-    densityButtons.forEach((button) => {
-      button.classList.toggle("is-selected", button.dataset.density === density);
-    });
-  }
   widgetPresetButtons.forEach((button) => {
     button.classList.toggle("is-selected", activePreset?.[0] === button.dataset.preset);
   });
 }
 
 function saveUserSettings(settings) {
-  if (chrome.storage?.local) {
-    chrome.storage.local.set(settings);
+  const storage = getChromeStorage();
+  if (storage) {
+    storage.set(settings);
+  } else {
+    try {
+      localStorage.setItem("netrunner-bookmarks", JSON.stringify({ ...JSON.parse(localStorage.getItem("netrunner-bookmarks") || "{}"), ...settings }));
+    } catch {
+      // Ignore localStorage failures when the page is not running in an extension context.
+    }
   }
 }
 
@@ -1248,7 +1462,8 @@ const exportSettingKeys = [
   "notesWidgetVisible", "moveControlsVisible", "widgetSize", "columns",
   "glassOpacity", "iconSize", "language", "widgetVisibility", "widgetOrder",
   "density", "onboardingComplete", "disabledDefaultShortcuts", "theme",
-  "dashboardProfiles", "keyboardShortcuts",
+  "dashboardProfiles", "keyboardShortcuts", "simplifiedMode", "fullScreenLayout",
+  "clockUses12Hour",
 ];
 const shortcutActions = [
   { id: "focusSearch", label: "FOCUS SEARCH", key: "s" },
@@ -1281,10 +1496,13 @@ const defaultExportSettings = {
   glassOpacity: "0.58",
   iconSize: "32",
   language: "en",
-  widgetVisibility: { hud: true, telemetry: true, shortcuts: true, productivity: true, bookmarks: true },
-  widgetOrder: ["hud", "shortcuts", "productivity", "bookmarks"],
+  widgetVisibility: { hud: true, telemetry: true, productivity: true, bookmarks: true },
+  widgetOrder: ["hud", "productivity", "bookmarks"],
   density: "balanced",
   onboardingComplete: false,
+  simplifiedMode: true,
+  fullScreenLayout: false,
+  clockUses12Hour: false,
   disabledDefaultShortcuts: [],
   theme: "electric-purple",
   dashboardProfiles: [],
@@ -1316,6 +1534,8 @@ function getDashboardSnapshot() {
     widgetOrder: [...widgetOrder],
     density: activeDensity,
     theme: activeTheme,
+    simplifiedMode: simpleModeToggle?.checked === true,
+    fullScreenLayout: fullScreenLayoutToggle?.checked === true,
   };
   return snapshot;
 }
@@ -1449,7 +1669,7 @@ function shortcutMatches(event, shortcut) {
 
 function runKeyboardShortcut(actionId) {
   if (actionId === "focusSearch") {
-    searchInput?.focus();
+    navbarSearchInput?.focus();
     return;
   }
   if (actionId === "toggleVisualSystem") {
@@ -1476,8 +1696,32 @@ function runKeyboardShortcut(actionId) {
 }
 
 exportSettingsButton?.addEventListener("click", () => {
-  chrome.storage.local.get(exportSettingKeys, (settings) => {
-    if (chrome.runtime.lastError) {
+  const storage = getChromeStorage();
+  if (!storage) {
+    const exportSettings = {
+      ...defaultExportSettings,
+      ...JSON.parse(localStorage.getItem("netrunner-bookmarks") || "{}"),
+      widgetVisibility: { ...defaultExportSettings.widgetVisibility },
+      keyboardShortcuts: { ...defaultKeyboardShortcuts },
+    };
+    const blob = new Blob([JSON.stringify({
+      format: "netrunner-bookmarks-settings",
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      settings: exportSettings,
+    }, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `netrunner-bookmarks-settings-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showFeatureStatus(dataTransferStatus, "LOCAL JSON EXPORTED");
+    return;
+  }
+
+  storage.get(exportSettingKeys, (settings) => {
+    if (getChromeRuntimeLastError()) {
       showFeatureStatus(dataTransferStatus, "EXPORT FAILED // LOCAL STORAGE UNAVAILABLE", true);
       return;
     }
@@ -1523,7 +1767,8 @@ function validateImportedSettings(payload) {
   });
   [
     "reducedMotion", "hudEnabled", "quotesEnabled", "tasksWidgetVisible",
-    "notesWidgetVisible", "moveControlsVisible", "onboardingComplete",
+    "notesWidgetVisible", "moveControlsVisible", "onboardingComplete", "simplifiedMode",
+    "fullScreenLayout", "clockUses12Hour",
   ].forEach((key) => {
     if (key in raw) {
       if (typeof raw[key] !== "boolean") throw new Error(`Invalid ${key}.`);
@@ -1577,9 +1822,9 @@ function validateImportedSettings(payload) {
     }));
   }
   if ("customAiShortcuts" in raw) {
-    if (!Array.isArray(raw.customAiShortcuts) || raw.customAiShortcuts.length > 30
+    if (!Array.isArray(raw.customAiShortcuts) || raw.customAiShortcuts.length > maxCustomAiShortcuts
       || raw.customAiShortcuts.some((item) => !item || typeof item.name !== "string"
-        || !item.name.trim() || item.name.length > 40 || typeof item.url !== "string"
+        || !item.name.trim() || item.name.length > 20 || typeof item.url !== "string" || item.url.length > 300
         || !getSafeExternalUrl(item.url))) {
       throw new Error("Invalid custom shortcuts.");
     }
@@ -1660,6 +1905,7 @@ function validateImportedSettings(payload) {
         "quotesEnabled", "typingSpeed", "tasksWidgetVisible", "notesWidgetVisible",
         "moveControlsVisible", "widgetSize", "columns", "glassOpacity", "iconSize",
         "language", "widgetVisibility", "widgetOrder", "density", "theme",
+        "simplifiedMode", "fullScreenLayout",
       ];
       const profileSettings = Object.fromEntries(Object.entries(profile.settings || {})
         .filter(([key]) => profileSettingKeys.includes(key)));
@@ -1686,8 +1932,15 @@ importSettingsFile?.addEventListener("change", () => {
   reader.addEventListener("load", () => {
     try {
       const settings = validateImportedSettings(JSON.parse(String(reader.result)));
-      chrome.storage.local.set(settings, () => {
-        if (chrome.runtime.lastError) {
+      const storage = getChromeStorage();
+      if (!storage) {
+        Object.entries(settings).forEach(([key, value]) => localStorage.setItem(key, JSON.stringify(value)));
+        applyUserSettings(settings);
+        showFeatureStatus(dataTransferStatus, "LOCAL JSON IMPORTED");
+        return;
+      }
+      storage.set(settings, () => {
+        if (getChromeRuntimeLastError()) {
           showFeatureStatus(dataTransferStatus, "IMPORT FAILED // LOCAL STORAGE ERROR", true);
           return;
         }
@@ -1803,7 +2056,12 @@ resetBackgroundButton?.addEventListener("click", () => {
   document.documentElement.classList.remove("custom-background-active");
   if (backgroundFileInput) backgroundFileInput.value = "";
   if (backgroundFileStatus) backgroundFileStatus.textContent = translateValue("DEFAULT CITY NODE", activeLanguage);
-  if (chrome.storage?.local) chrome.storage.local.remove("backgroundImage");
+  const storage = getChromeStorage();
+  if (storage) {
+    storage.remove("backgroundImage");
+  } else {
+    localStorage.removeItem("backgroundImage");
+  }
 });
 
 reducedMotionToggle?.addEventListener("change", () => {
@@ -1849,6 +2107,18 @@ moveControlsToggle?.addEventListener("change", () => {
   saveUserSettings({ moveControlsVisible });
 });
 
+simpleModeToggle?.addEventListener("change", () => {
+  const simplifiedMode = simpleModeToggle.checked;
+  applyUserSettings({ simplifiedMode });
+  saveUserSettings({ simplifiedMode });
+});
+
+fullScreenLayoutToggle?.addEventListener("change", () => {
+  const fullScreenLayout = fullScreenLayoutToggle.checked;
+  applyUserSettings({ fullScreenLayout });
+  saveUserSettings({ fullScreenLayout });
+});
+
 widgetSizeButtons.forEach((button) => {
   button.addEventListener("click", () => {
     applyWidgetSize(button.dataset.widgetSize);
@@ -1869,10 +2139,10 @@ glassOpacity?.addEventListener("input", () => {
 });
 
 const widgetPresets = {
-  full: { hud: true, telemetry: true, shortcuts: true, productivity: true, bookmarks: true },
-  focus: { hud: true, telemetry: false, shortcuts: false, productivity: true, bookmarks: true },
-  command: { hud: true, telemetry: true, shortcuts: true, productivity: true, bookmarks: false },
-  minimal: { hud: false, telemetry: false, shortcuts: false, productivity: false, bookmarks: true },
+  full: { hud: true, telemetry: true, productivity: true, bookmarks: true },
+  focus: { hud: true, telemetry: false, productivity: true, bookmarks: true },
+  command: { hud: true, telemetry: true, productivity: true, bookmarks: false },
+  minimal: { hud: false, telemetry: false, productivity: false, bookmarks: true },
 };
 
 function applyWidgetPreset(name) {
@@ -1882,11 +2152,13 @@ function applyWidgetPreset(name) {
   document.documentElement.dataset.widgetPreset = name;
   const productivityVisible = preset.productivity;
   applyUserSettings({
+    simplifiedMode: false,
     widgetVisibility,
     tasksWidgetVisible: productivityVisible,
     notesWidgetVisible: productivityVisible,
   });
   saveUserSettings({
+    simplifiedMode: false,
     widgetVisibility,
     tasksWidgetVisible: productivityVisible,
     notesWidgetVisible: productivityVisible,
@@ -1932,11 +2204,17 @@ chrome.storage?.local?.get(
     "widgetOrder",
     "density",
     "onboardingComplete",
+    "simplifiedMode",
+    "fullScreenLayout",
     "theme",
     "dashboardProfiles",
     "keyboardShortcuts",
   ],
   (settings) => {
+    if (typeof settings.simplifiedMode !== "boolean") {
+      settings.simplifiedMode = settings.onboardingComplete !== true;
+      saveUserSettings({ simplifiedMode: settings.simplifiedMode });
+    }
     applyUserSettings(settings);
     widgetOrder = Array.isArray(settings.widgetOrder)
       ? settings.widgetOrder
@@ -1958,7 +2236,11 @@ chrome.storage?.local?.get(
       applyBrandName("DEMONTECH-BOOKMARKS");
     }
     customAiShortcuts = Array.isArray(settings.customAiShortcuts)
-      ? settings.customAiShortcuts.filter((shortcut) => shortcut?.name && getSafeExternalUrl(shortcut.url))
+      ? settings.customAiShortcuts.filter((shortcut) =>
+          typeof shortcut?.name === "string" && shortcut.name.trim().length <= 20
+          && typeof shortcut.url === "string" && shortcut.url.length <= 300
+          && getSafeExternalUrl(shortcut.url)
+        ).slice(0, maxCustomAiShortcuts)
       : [];
     disabledDefaultShortcuts = Array.isArray(settings.disabledDefaultShortcuts)
       ? settings.disabledDefaultShortcuts.filter((id) =>
@@ -2005,8 +2287,15 @@ function applyTheme(theme) {
   themeButtons.forEach((button) => {
     button.classList.toggle("is-selected", button.dataset.theme === theme);
   });
-  if (chrome.storage?.local) {
-    chrome.storage.local.set({ theme });
+  const storage = getChromeStorage();
+  if (storage) {
+    storage.set({ theme });
+  } else {
+    try {
+      localStorage.setItem("theme", theme);
+    } catch {
+      // Ignore storage failures when no extension storage is available.
+    }
   }
 }
 
@@ -2014,116 +2303,14 @@ themeButtons.forEach((button) => {
   button.addEventListener("click", () => applyTheme(button.dataset.theme));
 });
 
-if (chrome.storage?.local) {
-  chrome.storage.local.get("theme", ({ theme }) => {
+const themeStorage = getChromeStorage();
+if (themeStorage) {
+  themeStorage.get("theme", ({ theme }) => {
     applyTheme(theme || activeTheme);
   });
 } else {
-  applyTheme(activeTheme);
+  applyTheme(localStorage.getItem("theme") || activeTheme);
 }
-
-const commandActions = [
-  { label: "Focus bookmark search", run: () => searchInput?.focus() },
-  {
-    label: "Open visual system",
-    run: () => {
-      settingsToggle?.setAttribute("aria-expanded", "true");
-      if (settingsContent) settingsContent.hidden = false;
-      settingsPanel?.classList.add("is-open");
-    },
-  },
-  {
-    label: "Toggle edit layout",
-    run: () => {
-      if (!moveControlsToggle) return;
-      moveControlsToggle.checked = !moveControlsToggle.checked;
-      moveControlsToggle.dispatchEvent(new Event("change"));
-    },
-  },
-  {
-    label: "Use balanced widget size",
-    run: () => {
-      applyWidgetSize("balanced");
-      saveUserSettings({ widgetSize: "balanced" });
-    },
-  },
-  {
-    label: "Use compact widget size",
-    run: () => {
-      applyWidgetSize("compact");
-      saveUserSettings({ widgetSize: "compact" });
-    },
-  },
-  {
-    label: "Use expanded widget size",
-    run: () => {
-      applyWidgetSize("expanded");
-      saveUserSettings({ widgetSize: "expanded" });
-    },
-  },
-  {
-    label: "Use two-column grid",
-    run: () => {
-      applyColumns("2");
-      saveUserSettings({ columns: "2" });
-    },
-  },
-  {
-    label: "Use one-column grid",
-    run: () => {
-      applyColumns("1");
-      saveUserSettings({ columns: "1" });
-    },
-  },
-  {
-    label: "Use three-column grid",
-    run: () => {
-      applyColumns("3");
-      saveUserSettings({ columns: "3" });
-    },
-  },
-];
-
-function renderCommandActions(query = "") {
-  if (!commandPaletteActions) return;
-  const normalizedQuery = query.trim().toLowerCase();
-  commandPaletteActions.replaceChildren();
-  commandActions
-    .filter((action) => translateValue(action.label, activeLanguage).toLowerCase().includes(normalizedQuery))
-    .forEach((action) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "command-action";
-      button.textContent = translateValue(action.label, activeLanguage);
-      button.addEventListener("click", () => {
-        action.run();
-        closeCommandPalette();
-      });
-      commandPaletteActions.append(button);
-    });
-}
-
-function openCommandPalette() {
-  if (!commandPalette) return;
-  commandPalette.hidden = false;
-  renderCommandActions();
-  commandPaletteInput?.focus();
-}
-
-function closeCommandPalette() {
-  if (commandPalette) commandPalette.hidden = true;
-}
-
-commandPaletteInput?.addEventListener("input", () => {
-  renderCommandActions(commandPaletteInput.value);
-});
-commandPaletteClose?.addEventListener("click", closeCommandPalette);
-commandPalette?.addEventListener("click", (event) => {
-  if (event.target === commandPalette) closeCommandPalette();
-});
-commandPalette?.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") closeCommandPalette();
-});
 
 const netrunnerQuotes = [
   "The net remembers everything.",
@@ -2135,19 +2322,75 @@ const netrunnerQuotes = [
 
 function updateHud() {
   const now = new Date();
-  const hours = String(now.getHours()).padStart(2, "0");
+  const hour24 = now.getHours();
+  const hour12 = hour24 % 12 || 12;
+  const hours = String(clockUses12Hour ? hour12 : hour24).padStart(2, "0");
   const minutes = String(now.getMinutes()).padStart(2, "0");
-  hudClock.textContent = `${hours}:${minutes}`;
-  hudClock.dateTime = now.toISOString();
-  hudDate.textContent = now
-    .toLocaleDateString(languageLocales[activeLanguage] || "en-US", {
-      weekday: "long",
+  const seconds = String(now.getSeconds()).padStart(2, "0");
+  const locale = languageLocales[activeLanguage] || "en-US";
+  if (clockHours) clockHours.textContent = hours;
+  if (clockMinutes) clockMinutes.textContent = minutes;
+  if (clockSeconds) clockSeconds.textContent = seconds;
+  if (hudClock) {
+    hudClock.dateTime = now.toISOString();
+    const period = clockUses12Hour
+      ? new Intl.DateTimeFormat(locale, { hour: "numeric", hour12: true }).formatToParts(now)
+          .find((part) => part.type === "dayPeriod")?.value || ""
+      : "";
+    if (clockPeriod) {
+      clockPeriod.textContent = period;
+      clockPeriod.hidden = !clockUses12Hour;
+    }
+    const timeLabel = `${hours}:${minutes}:${seconds}${period ? ` ${period}` : ""}`;
+    const nextModeLabel = activeLanguage === "es"
+      ? `Cambiar a formato de ${clockUses12Hour ? "24" : "12"} horas`
+      : `Switch to ${clockUses12Hour ? "24" : "12"}-hour time`;
+    hudClock.setAttribute("aria-label", `${timeLabel}. ${nextModeLabel}`);
+    hudClock.title = nextModeLabel;
+  }
+  const minuteKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}-${now.getMinutes()}`;
+  if (lastClockMinute !== null && minuteKey !== lastClockMinute && clockReadout) {
+    clockReadout.classList.remove("is-minute-change");
+    void clockReadout.offsetWidth;
+    clockReadout.classList.add("is-minute-change");
+    window.clearTimeout(minuteFlashTimer);
+    minuteFlashTimer = window.setTimeout(() => {
+      clockReadout.classList.remove("is-minute-change");
+    }, 850);
+  }
+  lastClockMinute = minuteKey;
+  if (clockTimezone) {
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "Local";
+    clockTimezone.textContent = timeZone.split("/").at(-1).replaceAll("_", " ").toUpperCase();
+  }
+  if (clockMinuteProgress) {
+    clockMinuteProgress.style.width = `${(now.getSeconds() / 59) * 100}%`;
+  }
+  if (hudWeekday) {
+    hudWeekday.textContent = new Intl.DateTimeFormat(locale, { weekday: "short" }).format(now).toUpperCase();
+  }
+  if (hudDateValue) {
+    hudDateValue.textContent = new Intl.DateTimeFormat(locale, {
       month: "short",
       day: "2-digit",
       year: "numeric",
-    })
-    .toUpperCase();
+    }).format(now).toUpperCase();
+  }
 }
+
+function toggleClockFormat() {
+  clockUses12Hour = !clockUses12Hour;
+  saveUserSettings({ clockUses12Hour });
+  updateHud();
+}
+
+hudClock?.addEventListener("click", toggleClockFormat);
+hudClock?.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    toggleClockFormat();
+  }
+});
 
 function rotateHudQuote() {
   if (!quotesEnabled) {
@@ -2202,23 +2445,6 @@ const aiEndpoints = {
   claude: "https://claude.ai/new",
 };
 
-aiProviders.forEach((providerButton) => {
-  providerButton.addEventListener("click", () => {
-    const provider = providerButton.dataset.provider;
-    const defaultShortcut = defaultShortcuts.find(
-      (shortcut) => shortcut.id === providerButton.dataset.defaultShortcut
-    );
-    const endpoint = defaultShortcut?.url || aiEndpoints[provider];
-
-    if (!endpoint) {
-      selectedAiLabel.textContent = translateValue("AI UNAVAILABLE", activeLanguage);
-      return;
-    }
-
-    window.open(endpoint, "_blank", "noopener,noreferrer");
-  });
-});
-
 // OBTENCIÓN PRIVADA DE FAVICONS (Sin pings a Google)
 function getFaviconUrl(url) {
   try {
@@ -2227,9 +2453,12 @@ function getFaviconUrl(url) {
       return "assets/images/default-icon.svg";
     }
 
-    // Utilizamos la URL especial interna de Chrome para obtener el favicon de su caché local
-    // Requiere el permiso "favicon" en el manifest.json (que ya tienes)
-    return `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent(urlObject.origin)}&size=32`;
+    const runtimeId = getChromeRuntime()?.id;
+    if (runtimeId) {
+      return `chrome-extension://${runtimeId}/_favicon/?pageUrl=${encodeURIComponent(urlObject.origin)}&size=32`;
+    }
+
+    return "assets/images/default-icon.svg";
   } catch {
     return "assets/images/default-icon.svg";
   }
@@ -2391,7 +2620,11 @@ function createBookmarkCard(bookmark) {
     if (title === null) return;
     const url = window.prompt(translateValue("Bookmark URL:", activeLanguage), bookmark.url);
     if (url === null || !isValidBookmarkUrl(url.trim())) return;
-    chrome.bookmarks.update(
+    const bookmarks = getChromeBookmarks();
+    if (!bookmarks?.update) {
+      return;
+    }
+    bookmarks.update(
       bookmark.id,
       { title: title.trim() || bookmark.title, url: url.trim() },
       () => refreshAfterMutation()
@@ -2408,7 +2641,10 @@ function createBookmarkCard(bookmark) {
       ? `¿Eliminar "${bookmark.title || bookmark.url}"?`
       : `Delete "${bookmark.title || bookmark.url}"?`;
     if (!window.confirm(confirmation)) return;
-    chrome.bookmarks.remove(bookmark.id, () => refreshAfterMutation());
+    const bookmarks = getChromeBookmarks();
+    if (bookmarks?.remove) {
+      bookmarks.remove(bookmark.id, () => refreshAfterMutation());
+    }
   });
   actions.append(editButton, deleteButton);
 
@@ -2570,6 +2806,9 @@ function createBoardButton(board, label, isActive = false) {
   button.setAttribute("role", "tab");
   button.setAttribute("aria-selected", String(isActive));
   button.setAttribute("aria-controls", "bookmarks-grid");
+  if (boardId === "recent") {
+    button.setAttribute("aria-expanded", String(!recentGridIsCollapsed));
+  }
   button.tabIndex = isActive ? 0 : -1;
   icon.className = "board-tab-icon";
   icon.setAttribute("aria-hidden", "true");
@@ -2583,9 +2822,26 @@ function createBoardButton(board, label, isActive = false) {
     : String(flattenBookmarks([board]).length).padStart(2, "0");
   button.append(icon, labelNode, count);
   button.addEventListener("click", () => {
+    if (activeBoardId === board.id) {
+      if (boardId === "recent") {
+        recentGridIsCollapsed = !recentGridIsCollapsed;
+        bookmarksGrid.style.display = recentGridIsCollapsed ? "none" : "";
+        button.setAttribute("aria-expanded", String(!recentGridIsCollapsed));
+      } else {
+        const isHidden = bookmarksGrid.style.display === "none";
+        bookmarksGrid.style.display = isHidden ? "" : "none";
+        button.setAttribute("aria-expanded", String(isHidden));
+      }
+      return;
+    }
     activeBoardId = board.id;
+    recentGridIsCollapsed = false;
+    bookmarksGrid.style.display = "";
+    bookmarksGrid.style.opacity = "1";
+    bookmarksGrid.style.transform = "translateY(0)";
     renderBoardNavigation();
     renderBoard(board);
+    bookmarksSection?.scrollIntoView({ behavior: "smooth", block: "start" });
   });
   button.addEventListener("keydown", (event) => {
     if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
@@ -2607,7 +2863,7 @@ function renderBoardNavigation() {
   const recentBoard = { id: "recent", children: [] };
   const recentButton = createBoardButton(
     recentBoard,
-    translateValue("RECENT", activeLanguage),
+    translateValue("Recent connections", activeLanguage),
     activeBoardId === "recent"
   );
   if (recentBookmarkCount !== null) {
@@ -2630,6 +2886,14 @@ function renderBookmarks(bookmarks, title = "Search results") {
   bookmarksGrid.replaceChildren(...validBookmarks.map(createBookmarkCard));
   bookmarksTitle.textContent = translateValue(title, activeLanguage);
   updateStatus(validBookmarks.length);
+  animateBoardContent();
+}
+
+function animateBoardContent() {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  bookmarksGrid.classList.remove("board-content-enter");
+  void bookmarksGrid.offsetWidth;
+  bookmarksGrid.classList.add("board-content-enter");
 }
 
 function renderRecentBookmarks(bookmarks) {
@@ -2646,6 +2910,15 @@ function renderRecentBookmarks(bookmarks) {
   bookmarksGrid.replaceChildren(createBoardControls({ id: "recent", children: [] }), recentGrid);
   bookmarksTitle.textContent = translateValue("Recent connections", activeLanguage);
   updateStatus(validBookmarks.length);
+  if (collapseRecentOnFirstRender) {
+    recentGridIsCollapsed = true;
+    bookmarksGrid.style.display = "none";
+    collapseRecentOnFirstRender = false;
+  } else {
+    recentGridIsCollapsed = false;
+    bookmarksGrid.style.display = "";
+  }
+  animateBoardContent();
 }
 
 function createBoardControls(board) {
@@ -2732,6 +3005,7 @@ function renderBoard(board) {
   bookmarksGrid.prepend(createBoardControls(board));
   bookmarksTitle.textContent = getBoardLabel(board) || "Untitled board";
   updateStatus(folders.reduce((total, folder) => total + flattenBookmarks([folder]).length, directLinks.length));
+  animateBoardContent();
 }
 
 function refreshAfterMutation() {
@@ -2777,12 +3051,12 @@ function loadBookmarkTree() {
   });
 }
 
-searchInput.addEventListener("keydown", (event) => {
+navbarSearchInput?.addEventListener("keydown", (event) => {
   if (event.key !== "Enter") {
     return;
   }
 
-  const query = searchInput.value.trim();
+  const query = navbarSearchInput.value.trim();
 
   if (!query) {
     return;
@@ -2794,6 +3068,71 @@ searchInput.addEventListener("keydown", (event) => {
     "_blank",
     "noopener,noreferrer"
   );
+});
+
+navbarDropdownTrigger?.addEventListener("click", () => {
+  const isExpanded = navbarDropdownTrigger.getAttribute("aria-expanded") === "true";
+  navbarDropdownTrigger.setAttribute("aria-expanded", String(!isExpanded));
+  navbarDropdownMenu.hidden = isExpanded;
+});
+
+navbarDropdownMenu?.addEventListener("click", (event) => {
+  const target = event.target.closest(".dropdown-item");
+  if (!target) return;
+
+  const provider = target.dataset.provider;
+  const defaultShortcutId = target.dataset.defaultShortcut;
+
+  if (provider) {
+    const endpoint = aiEndpoints[provider];
+    if (endpoint) {
+      window.open(endpoint, "_blank", "noopener,noreferrer");
+    }
+    navbarDropdownMenu.hidden = true;
+    navbarDropdownTrigger.setAttribute("aria-expanded", "false");
+    return;
+  }
+
+  if (defaultShortcutId) {
+    const shortcut = defaultShortcuts.find((s) => s.id === defaultShortcutId);
+    if (shortcut) {
+      window.open(shortcut.url, "_blank", "noopener,noreferrer");
+    }
+    navbarDropdownMenu.hidden = true;
+    navbarDropdownTrigger.setAttribute("aria-expanded", "false");
+    return;
+  }
+
+  if (target.id === "navbar-add-custom-ai") {
+    navbarDropdownMenu.hidden = true;
+    navbarDropdownTrigger.setAttribute("aria-expanded", "false");
+    if (settingsContent?.hidden) {
+      settingsContent.hidden = false;
+      settingsToggle?.setAttribute("aria-expanded", "true");
+      settingsPanel?.classList.add("is-open");
+    }
+    customAiNameInput?.focus();
+    return;
+  }
+
+  if (target.id === "navbar-open-settings") {
+    navbarDropdownMenu.hidden = true;
+    navbarDropdownTrigger.setAttribute("aria-expanded", "false");
+    settingsContent.hidden = false;
+    settingsToggle?.setAttribute("aria-expanded", "true");
+    settingsPanel?.classList.add("is-open");
+    return;
+  }
+});
+
+document.addEventListener("click", (event) => {
+  if (navbarDropdownMenu && !navbarDropdownMenu.hidden) {
+    const dropdown = document.querySelector("#ai-providers-dropdown");
+    if (dropdown && !dropdown.contains(event.target)) {
+      navbarDropdownMenu.hidden = true;
+      navbarDropdownTrigger.setAttribute("aria-expanded", "false");
+    }
+  }
 });
 
 document.addEventListener("keydown", (event) => {
@@ -2836,12 +3175,6 @@ document.addEventListener("keydown", (event) => {
     }
   }
 
-  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
-    event.preventDefault();
-    openCommandPalette();
-    return;
-  }
-
   if (event.key === "Escape" && settingsPanel?.classList.contains("is-open")) {
     settingsToggle?.setAttribute("aria-expanded", "false");
     if (settingsContent) settingsContent.hidden = true;
@@ -2850,3 +3183,24 @@ document.addEventListener("keydown", (event) => {
 });
 
 loadBookmarkTree();
+
+const toggleStyle = document.createElement("style");
+toggleStyle.textContent = `
+.bookmarks-grid {
+  transition: opacity 0.3s ease, transform 0.3s ease, max-height 0.3s ease;
+  transform-origin: top;
+  max-height: 5000px;
+}
+.bookmarks-grid.is-collapsed {
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
+  max-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  overflow: hidden;
+  border: none !important;
+}
+`;
+document.head.append(toggleStyle);

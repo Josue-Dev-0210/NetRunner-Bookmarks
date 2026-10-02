@@ -5,7 +5,7 @@ A lightweight, smart bookmark and shortcut manager built in pure JavaScript with
 ## Key Features
 - **Node Management (Bookmarks):** Explore and organize your browser’s local bookmark network with a terminal-style interface.
 - **Local Productivity Widgets:** Includes a built-in task queue manager and notepad that save information locally (autosave).
-- **Built-in AI Launcher:** Quick shortcuts to ChatGPT, Gemini, Claude, and customizable shortcuts.
+- **Built-in AI Launcher:** Clickable shortcuts in Node Signals for ChatGPT, Gemini, Claude, and other services; add up to 60 custom HTTPS shortcuts from Visual System.
 - **Customizable Visual System:** Adjust the interface density, motion effect level, and background intensity, or choose from 4 color schemes (Electric Purple, Neon Pink, Night City, Black Ice).
 - **Vanilla JavaScript:** All logic is implemented without heavy frameworks, ensuring optimal performance.
 

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-density="balanced">
+<html lang="en" data-density="balanced" class="simplified-dashboard search-navbar-collapsed">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -18,28 +18,56 @@
     </div>
     <section id="onboarding-overlay" class="onboarding-overlay" hidden aria-labelledby="onboarding-title">
       <div class="onboarding-card" role="dialog" aria-modal="true">
-        <span class="section-kicker">FIRST INSTALL // LOCAL SETUP</span>
-        <h2 id="onboarding-title">WELCOME TO THE NODE</h2>
-        <p class="onboarding-lead">Your private bookmark workspace is ready. Everything below stays on this device.</p>
+        <span class="section-kicker">QUICK START // ORGANIZE YOUR SPACE</span>
+        <h2 id="onboarding-title">YOUR DASHBOARD, YOUR WAY</h2>
+        <p class="onboarding-lead">Start with a clean workspace. Add only the panels you need; your bookmarks and settings stay on this device.</p>
         <ol class="onboarding-steps">
-          <li><strong>BOOKMARKS</strong><span>Browse and manage your Chrome bookmark network.</span></li>
-          <li><strong>WIDGETS</strong><span>Use TASKS, NOTES and presets from VISUAL SYSTEM.</span></li>
-          <li><strong>SHORTCUTS</strong><span>Launch AI and custom services with one click.</span></li>
+          <li><strong>01 // BOOKMARKS</strong><span>Use the board tabs to switch between Recent, Bookmarks Bar and folders. Add folders or links from the active board, then drag links into folders.</span></li>
+          <li><strong>02 // SHOW WHAT YOU NEED</strong><span>Open VISUAL SYSTEM. Turn off simplified mode to reveal the HUD, NODE SIGNALS, tasks and notes. Use widget presets to change panels together, and the top-bar magnifier to collapse or expand Google search.</span></li>
+          <li><strong>03 // ARRANGE PANELS</strong><span>Enable “SHOW MOVE CONTROLS”, then drag a panel by its dotted handle. Save a dashboard profile when you like the layout.</span></li>
+          <li><strong>04 // QUICK SHORTCUTS</strong><span>Click an icon in NODE SIGNALS to open its service. Use the + tile to add a shortcut; this opens VISUAL SYSTEM // CUSTOM AI SHORTCUTS, where you can add up to 60 HTTPS links with a name, remove custom links, or hide and restore built-in shortcuts.</span></li>
+          <li><strong>05 // RECENT CONNECTIONS</strong><span>Recent connections start collapsed. Select the Recent tab in the bottom bar to expand or collapse them.</span></li>
         </ol>
-        <button id="onboarding-close" class="settings-action onboarding-close" type="button">ENTER DASHBOARD</button>
-      </div>
-    </section>
-    <section id="command-palette" class="command-palette" hidden aria-labelledby="command-palette-title">
-      <div class="command-palette-card" role="dialog" aria-modal="true">
-        <div class="command-palette-heading">
-          <span class="section-kicker">LOCAL COMMAND // CTRL + K</span>
-          <button id="command-palette-close" class="command-palette-close" type="button" aria-label="Close command palette">×</button>
+        <div class="onboarding-actions">
+          <button id="onboarding-organize" class="settings-action onboarding-close" type="button">START ORGANIZING</button>
+          <button id="onboarding-close" class="settings-reset onboarding-skip" type="button">CLOSE TUTORIAL</button>
         </div>
-        <h2 id="command-palette-title">COMMAND PALETTE</h2>
-        <input id="command-palette-input" class="settings-input" type="search" placeholder="Search local actions..." autocomplete="off" />
-        <div id="command-palette-actions" class="command-palette-actions"></div>
       </div>
     </section>
+    <nav id="shortcuts-navbar" class="shortcuts-navbar is-search-collapsed" aria-label="Quick access and search">
+      <div class="navbar-container is-search-collapsed">
+        <div class="navbar-brand" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          <span>DEMONTECH</span>
+        </div>
+        <div id="navbar-search-region" class="navbar-center is-collapsed" inert>
+          <div class="navbar-search" role="search">
+            <span class="search-prefix" aria-hidden="true">>_</span>
+            <input
+              id="navbar-search-input"
+              type="search"
+              placeholder="Buscar en Google..."
+              autocomplete="off"
+              spellcheck="false"
+              aria-label="Buscar en Google"
+            />
+          </div>
+        </div>
+        <div class="navbar-actions">
+          <button
+            id="navbar-search-toggle"
+            class="navbar-icon-btn navbar-search-toggle"
+            type="button"
+            aria-expanded="false"
+            aria-controls="navbar-search-region"
+            aria-label="Show Google search"
+            title="Show Google search"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.3"/><path d="m16 16 4.5 4.5"/></svg>
+          </button>
+        </div>
+      </div>
+    </nav>
 
     <div class="background-glitch" aria-hidden="true"></div>
     <div class="background-mark background-mark--daemon" aria-hidden="true">デーモン</div>
@@ -61,15 +89,16 @@
             <span>LATENCY</span>
             <strong id="telemetry-latency">12ms</strong>
           </div>
-          <div class="telemetry-progress">
+<div class="telemetry-progress">
             <div class="telemetry-progress-labels">
               <span>INTEGRITY</span>
               <span id="telemetry-integrity">98.4%</span>
             </div>
             <div class="telemetry-bar"><span id="telemetry-bar-fill"></span></div>
           </div>
+          <div class="ai-providers" role="group" aria-label="AI providers"></div>
         </section>
-      </aside>
+       </aside>
 
       <section class="workspace">
         <section class="hud widget-sortable" data-widget-id="hud" aria-label="Netrunner status">
@@ -86,75 +115,36 @@
             <div class="hero-signal">USER: <strong id="profile-name">RUNNER</strong> <span>● ONLINE</span></div>
           </div>
           <div class="hud-label">NIGHT CITY // DEMONTECH NODE</div>
-          <time id="hud-clock" class="hud-clock" datetime="" aria-live="off">00:00</time>
-          <div id="hud-date" class="hud-date">LOADING DATE</div>
+          <div class="hud-clock-card" aria-label="Local system time">
+            <div class="clock-card-heading">
+              <span class="clock-card-label" data-i18n>LOCAL SYSTEM TIME</span>
+              <span class="clock-live"><span aria-hidden="true"></span><span data-i18n>LIVE</span></span>
+            </div>
+            <div class="clock-readout">
+              <time id="hud-clock" class="hud-clock" datetime="" role="button" tabindex="0" aria-live="off" title="Switch to 12-hour time">
+                <span id="clock-hours">00</span>
+                <span class="clock-separator" aria-hidden="true">:</span>
+                <span id="clock-minutes">00</span>
+              </time>
+              <div class="clock-secondary">
+                <div class="clock-seconds-row">
+                  <span id="clock-seconds" class="clock-seconds">00</span>
+                  <span id="clock-period" class="clock-period" hidden></span>
+                </div>
+                <span class="clock-timezone"><span data-i18n>LOCAL ZONE</span><strong id="clock-timezone">LOCAL</strong></span>
+              </div>
+            </div>
+            <div class="clock-card-footer">
+              <div id="hud-date" class="hud-date">
+                <span id="hud-weekday" class="hud-weekday">LOADING</span>
+                <span id="hud-date-value" class="hud-date-value">DATE</span>
+              </div>
+            </div>
+            <div class="clock-minute-track" aria-hidden="true"><span id="clock-minute-progress"></span></div>
+          </div>
           <div class="hud-status"><span>●</span> SYSTEM ONLINE</div>
           <blockquote id="hud-quote" class="hud-quote">“The net remembers everything.”</blockquote>
-        </section>
-        <section class="ai-launcher widget-sortable" data-widget-id="shortcuts" aria-label="AI quick launch">
-          <button class="widget-drag-handle" type="button" draggable="true" aria-label="Drag shortcuts widget to reorder">⋮⋮</button>
-          <div class="search-shell">
-            <span class="search-prefix" aria-hidden="true">&gt;_</span>
-            <input
-              id="search-input"
-              type="search"
-              placeholder="Search Google..."
-              autocomplete="off"
-              spellcheck="false"
-              autofocus
-            />
-            <span class="search-shortcut" aria-hidden="true">CTRL + K</span>
-          </div>
-          <div class="ai-providers" role="group" aria-label="AI providers">
-            <button class="ai-provider ai-provider--chatgpt" type="button" data-provider="chatgpt">
-              <span class="ai-provider-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24"><path d="M12 3.5a8.5 8.5 0 1 0 0 17c1.7 0 3.2-.5 4.5-1.3l3 1 .2-3.3A8.4 8.4 0 0 0 12 3.5Z"/><path d="M8 14.5c1.6-1.1 3-2.8 3.8-5.1 1.3 1.6 2.7 2.7 4.5 3.3"/></svg>
-              </span>
-              <span>CHATGPT</span>
-              <span class="ai-provider-arrow" aria-hidden="true">↗</span>
-            </button>
-            <button class="ai-provider ai-provider--gemini" type="button" data-provider="gemini">
-              <span class="ai-provider-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24"><path d="m12 2 1.9 7.1L21 11l-7.1 1.9L12 20l-1.9-7.1L3 11l7.1-1.9L12 2Z"/><path d="m19 16 .7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7L19 16Z"/></svg>
-              </span>
-              <span>GEMINI</span>
-              <span class="ai-provider-arrow" aria-hidden="true">↗</span>
-            </button>
-            <button class="ai-provider ai-provider--claude" type="button" data-provider="claude">
-              <span class="ai-provider-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>
-              </span>
-              <span>CLAUDE</span>
-              <span class="ai-provider-arrow" aria-hidden="true">↗</span>
-            </button>
-            <button class="ai-provider ai-provider--youtube" type="button" data-default-shortcut="youtube">
-              <span class="ai-provider-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24"><path d="M21 8.2a2.8 2.8 0 0 0-2-2C17.2 5.7 12 5.7 12 5.7s-5.2 0-7 .5a2.8 2.8 0 0 0-2 2A29 29 0 0 0 2.5 12 29 29 0 0 0 3 15.8a2.8 2.8 0 0 0 2 2c1.8.5 7 .5 7 .5s5.2 0 7-.5a2.8 2.8 0 0 0 2-2 29 29 0 0 0 .5-3.8 29 29 0 0 0-.5-3.8Z"/><path d="m10 9 5 3-5 3V9Z"/></svg>
-              </span>
-              <span>YOUTUBE</span>
-              <span class="ai-provider-arrow" aria-hidden="true">↗</span>
-            </button>
-            <button class="ai-provider ai-provider--instagram" type="button" data-default-shortcut="instagram">
-              <span class="ai-provider-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.7" r="1" fill="currentColor" stroke="none"/></svg>
-              </span>
-              <span>INSTAGRAM</span>
-              <span class="ai-provider-arrow" aria-hidden="true">↗</span>
-            </button>
-            <button class="ai-provider ai-provider--github" type="button" data-default-shortcut="github">
-              <span class="ai-provider-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24"><path d="M12 2.8a9.2 9.2 0 0 0-2.9 17.9c.5.1.7-.2.7-.5v-1.8c-2.8.6-3.4-1.2-3.4-1.2-.5-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 0 1.5 1 1.5 1 .9 1.5 2.3 1.1 2.9.9.1-.7.4-1.1.6-1.3-2.2-.2-4.5-1.1-4.5-4.9 0-1.1.4-2 .9-2.7-.1-.2-.4-1.3.1-2.7 0 0 1-.3 2.8 1a9.7 9.7 0 0 1 5.1 0c1.8-1.2 2.8-1 2.8-1 .5 1.4.2 2.5.1 2.7.6.7.9 1.6.9 2.7 0 3.8-2.3 4.7-4.5 4.9.4.3.7 1 .7 1.9v2.8c0 .3.2.6.7.5A9.2 9.2 0 0 0 12 2.8Z"/></svg>
-              </span>
-              <span>GITHUB</span>
-              <span class="ai-provider-arrow" aria-hidden="true">↗</span>
-            </button>
-            <button id="quick-add-ai-button" class="ai-provider ai-provider--add" type="button">
-              <span class="ai-provider-icon" aria-hidden="true">+</span>
-              <span>ADD LINK</span>
-            </button>
-          </div>
-        </section>
-
+</section>
         <section class="productivity-grid widget-sortable" data-widget-id="productivity" aria-label="Local productivity widgets">
           <button class="widget-drag-handle" type="button" draggable="true" aria-label="Drag productivity widgets to reorder">⋮⋮</button>
           <article id="tasks-widget" class="productivity-widget">
@@ -181,10 +171,7 @@
 
         <section class="bookmarks-section widget-sortable" data-widget-id="bookmarks" aria-labelledby="bookmarks-title">
           <button class="widget-drag-handle" type="button" draggable="true" aria-label="Drag bookmarks widget to reorder">⋮⋮</button>
-          <nav class="board-bar" aria-label="Bookmark boards">
-            <div id="board-nav" class="board-nav" role="tablist" aria-label="Bookmark boards"></div>
-          </nav>
-          <div class="section-heading">
+          <div class="section-heading visually-hidden">
             <div>
               <p class="section-kicker">ACTIVE BOARD</p>
               <h2 id="bookmarks-title">Recent connections</h2>
@@ -228,6 +215,7 @@
                 <input id="custom-ai-url-input" class="settings-input" type="url" maxlength="300" placeholder="https://example.com" />
                 <button id="add-custom-ai-button" class="settings-action" type="button">ADD</button>
               </div>
+              <span id="custom-ai-status" class="settings-hint" aria-live="polite"></span>
               <div id="custom-ai-list" class="custom-ai-list" aria-live="polite"></div>
             </div>
             <div class="setting-row">
@@ -286,6 +274,14 @@
             </label>
             <span class="settings-label">WIDGET PROTOCOL</span>
             <span class="settings-hint">ENABLE MOVE CONTROLS TO REORDER PANELS</span>
+            <label class="settings-check">
+              <input id="simple-mode-toggle" type="checkbox" />
+              <span data-i18n>SIMPLIFIED DASHBOARD</span>
+            </label>
+            <label class="settings-check">
+              <input id="full-screen-layout-toggle" type="checkbox" />
+              <span data-i18n>FULL SCREEN LAYOUT</span>
+            </label>
             <span class="settings-label">WIDGET SIZE</span>
             <div id="widget-size-list" class="theme-list" role="group" aria-label="Widget size">
               <button class="theme-button widget-size-option" type="button" data-widget-size="compact">SMALL</button>
@@ -370,5 +366,10 @@
         </section>
       </section>
     </main>
+    <nav class="bookmark-dock" aria-label="Bookmark navigation">
+      <div class="board-bar">
+        <div id="board-nav" class="board-nav" role="tablist" aria-label="Bookmark boards"></div>
+      </div>
+    </nav>
   </body>
 </html>
