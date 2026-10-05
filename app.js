@@ -22,6 +22,10 @@ const backgroundIntensity = document.querySelector("#background-intensity");
 const backgroundFileInput = document.querySelector("#background-file-input");
 const resetBackgroundButton = document.querySelector("#reset-background-button");
 const backgroundFileStatus = document.querySelector("#background-file-status");
+const primaryColorInput = document.querySelector("#primary-color-input");
+const accentColorInput = document.querySelector("#accent-color-input");
+const resetCustomColorsButton = document.querySelector("#reset-custom-colors-button");
+const customColorStatus = document.querySelector("#custom-color-status");
 const hudToggle = document.querySelector("#hud-toggle");
 const quotesToggle = document.querySelector("#quotes-toggle");
 const typingSpeed = document.querySelector("#typing-speed");
@@ -43,6 +47,20 @@ const clockMinuteProgress = document.querySelector("#clock-minute-progress");
 const hudWeekday = document.querySelector("#hud-weekday");
 const hudDateValue = document.querySelector("#hud-date-value");
 const hudQuote = document.querySelector("#hud-quote");
+const clockExtraTextColorInput = document.querySelector("#clock-extra-text-color");
+const clockExtraToggles = document.querySelectorAll("[data-clock-extra-setting]");
+const clockExtraSettings = [
+  ["clockShowNodeLabel", "clock-node-label-hidden"],
+  ["clockShowHeading", "clock-heading-hidden"],
+  ["clockShowSeconds", "clock-seconds-hidden"],
+  ["clockShowTimezone", "clock-timezone-hidden"],
+  ["clockShowDate", "clock-date-hidden"],
+  ["clockShowStatus", "clock-status-hidden"],
+  ["clockShowAccessGranted", "clock-access-hidden"],
+  ["clockShowLinkArchive", "clock-archive-hidden"],
+  ["clockShowAwaitingInput", "clock-awaiting-hidden"],
+  ["clockShowUserStatus", "clock-user-hidden"],
+];
 const profileName = document.querySelector("#profile-name");
 const bootOverlay = document.querySelector("#boot-overlay");
 const bootLines = document.querySelector("#boot-lines");
@@ -51,7 +69,6 @@ const telemetryIp = document.querySelector("#telemetry-ip");
 const telemetryLatency = document.querySelector("#telemetry-latency");
 const telemetryIntegrity = document.querySelector("#telemetry-integrity");
 const telemetryBarFill = document.querySelector("#telemetry-bar-fill");
-const telemetryPanel = document.querySelector(".telemetry-panel");
 const tasksWidget = document.querySelector("#tasks-widget");
 const notesWidget = document.querySelector("#notes-widget");
 const taskForm = document.querySelector("#task-form");
@@ -96,6 +113,10 @@ const navbarSearchToggle = document.querySelector("#navbar-search-toggle");
 const navbarSearchRegion = document.querySelector("#navbar-search-region");
 const navbarContainer = document.querySelector(".navbar-container");
 const shortcutsNavbar = document.querySelector("#shortcuts-navbar");
+const dockShortcuts = document.querySelector(".bookmark-dock .ai-providers");
+const dockSectionsToggle = document.querySelector("#dock-sections-toggle");
+const dockSectionsMenu = document.querySelector("#dock-sections-menu");
+const dockSettingsButton = document.querySelector("#dock-settings-button");
 const navbarDropdownTrigger = document.querySelector("#navbar-dropdown-trigger");
 const navbarDropdownMenu = document.querySelector("#navbar-dropdown-menu");
 const navbarCustomAiList = document.querySelector("#navbar-custom-ai-list");
@@ -124,6 +145,130 @@ navbarSearchToggle?.addEventListener("click", () => {
   if (expanded) navbarSearchInput?.focus();
 });
 
+dockSectionsToggle?.addEventListener("click", () => {
+  const expanded = dockSectionsToggle.getAttribute("aria-expanded") !== "true";
+  dockSectionsToggle.setAttribute("aria-expanded", String(expanded));
+  if (dockSectionsMenu) dockSectionsMenu.hidden = !expanded;
+  document.documentElement.classList.toggle("dock-menu-open", expanded);
+});
+
+function closeDockSectionsMenu() {
+  if (dockSectionsMenu) dockSectionsMenu.hidden = true;
+  dockSectionsToggle?.setAttribute("aria-expanded", "false");
+  document.documentElement.classList.remove("dock-menu-open");
+}
+
+function syncDockWidgetMenuState() {
+  const simplified = document.documentElement.classList.contains("simplified-dashboard");
+  const productivityVisible = widgetVisibility.productivity !== false;
+  dockSectionsMenu?.querySelectorAll("[data-dock-toggle]").forEach((button) => {
+    const setting = button.dataset.dockToggle;
+    const itemVisible = setting === "telemetry"
+      ? widgetVisibility.telemetry !== false
+      : setting === "tasksWidgetVisible"
+        ? !document.documentElement.classList.contains("tasks-widget-hidden")
+        : !document.documentElement.classList.contains("notes-widget-hidden");
+    const sectionVisible = setting === "telemetry"
+      ? !simplified && itemVisible
+      : !simplified && productivityVisible && itemVisible;
+    button.setAttribute("aria-expanded", String(sectionVisible));
+  });
+}
+
+function navigateToDockTarget(targetId) {
+  const target = document.getElementById(targetId);
+  if (!target) {
+    console.error(`Dock section target not found: ${targetId}`);
+    return;
+  }
+
+  if (targetId === "node-signals") {
+    const isVisible = !document.documentElement.classList.contains("simplified-dashboard")
+      && widgetVisibility.telemetry !== false;
+    const nextVisible = !isVisible;
+    const nextWidgetVisibility = { ...widgetVisibility, telemetry: nextVisible };
+    const settingsToApply = {
+      simplifiedMode: false,
+      widgetVisibility: nextWidgetVisibility,
+    };
+    applyUserSettings(settingsToApply);
+    saveUserSettings(settingsToApply);
+    if (nextVisible) target.scrollIntoView({ behavior: "smooth", block: "center" });
+    syncDockWidgetMenuState();
+    return;
+  }
+
+  if (targetId === "tasks-widget" || targetId === "notes-widget") {
+    const setting = targetId === "tasks-widget" ? "tasksWidgetVisible" : "notesWidgetVisible";
+    const isVisible = !document.documentElement.classList.contains("simplified-dashboard")
+      && widgetVisibility.productivity !== false
+      && !document.documentElement.classList.contains(
+        targetId === "tasks-widget" ? "tasks-widget-hidden" : "notes-widget-hidden"
+      );
+    const nextVisible = !isVisible;
+    const settingsToApply = {
+      simplifiedMode: false,
+      widgetVisibility: { ...widgetVisibility, productivity: true },
+      [setting]: nextVisible,
+    };
+    applyUserSettings(settingsToApply);
+    saveUserSettings(settingsToApply);
+    if (nextVisible) target.scrollIntoView({ behavior: "smooth", block: "center" });
+    syncDockWidgetMenuState();
+    return;
+  }
+
+  const targetWidget = {
+    "hud-section": "hud",
+    "bookmarks-section": "bookmarks",
+  }[targetId];
+  const settingsToApply = {};
+  if (document.documentElement.classList.contains("simplified-dashboard")) {
+    settingsToApply.simplifiedMode = false;
+  }
+  if (targetWidget && widgetVisibility[targetWidget] === false) {
+    settingsToApply.widgetVisibility = { ...widgetVisibility, [targetWidget]: true };
+  }
+  if (targetId === "hud-section" && document.documentElement.classList.contains("hud-disabled")) {
+    settingsToApply.hudEnabled = true;
+  }
+  if (Object.keys(settingsToApply).length) {
+    applyUserSettings(settingsToApply);
+    saveUserSettings(settingsToApply);
+  }
+
+  target.scrollIntoView({ behavior: "smooth", block: "center" });
+  syncDockWidgetMenuState();
+}
+
+dockSectionsMenu?.addEventListener("click", (event) => {
+  if (!(event.target instanceof Element)) return;
+  const link = event.target.closest("[data-dock-target]");
+  if (!link) return;
+  navigateToDockTarget(link.dataset.dockTarget);
+  closeDockSectionsMenu();
+});
+
+dockSettingsButton?.addEventListener("click", () => {
+  if (settingsContent) settingsContent.hidden = false;
+  settingsToggle?.setAttribute("aria-expanded", "true");
+  settingsPanel?.classList.add("is-open");
+  closeDockSectionsMenu();
+  settingsToggle?.focus();
+});
+
+document.addEventListener("click", (event) => {
+  if (!dockSectionsMenu || dockSectionsMenu.hidden) return;
+  if (dockSectionsMenu.contains(event.target) || dockSectionsToggle?.contains(event.target)) return;
+  closeDockSectionsMenu();
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape" || !dockSectionsMenu || dockSectionsMenu.hidden) return;
+  closeDockSectionsMenu();
+  dockSectionsToggle?.focus();
+});
+
 let bookmarkTree = [];
 let activeBoardId = "recent";
 let recentBookmarkCount = null;
@@ -133,16 +278,27 @@ let dashboardProfiles = [];
 let keyboardShortcuts = {};
 let shortcutRecordingAction = null;
 let activeTheme = "electric-purple";
+let customColorsEnabled = false;
+let activePrimaryColor = "#b026ff";
+let activeAccentColor = "#ff003c";
 let autoProfileName = "RUNNER";
 let quoteTypingDelay = 82;
-let quotesEnabled = true;
+let quotesEnabled = false;
 let customAiShortcuts = [];
 let disabledDefaultShortcuts = [];
 let localTasks = [];
 const maxBackgroundSize = 2 * 1024 * 1024;
+let backgroundObjectUrl = null;
+let backgroundLoadSequence = 0;
+const themePalettes = {
+  "electric-purple": { primary: "#b026ff", accent: "#ff003c" },
+  "neon-pink": { primary: "#ff2bd6", accent: "#ff7a59" },
+  "night-city": { primary: "#00d9ff", accent: "#ff4d91" },
+  "black-ice": { primary: "#9bbcff", accent: "#ff5c7a" },
+};
 let widgetVisibility = {
   hud: true,
-  telemetry: true,
+  telemetry: false,
   productivity: true,
   bookmarks: true,
 };
@@ -344,18 +500,39 @@ const translations = {
   "YOUR DASHBOARD, YOUR WAY": "TU PANEL, A TU MANERA",
   "Start with a clean workspace. Add only the panels you need; your bookmarks and settings stay on this device.": "Empieza con un espacio limpio. Añade solo los paneles que necesites; tus marcadores y ajustes se quedan en este dispositivo.",
   "01 // BOOKMARKS": "01 // MARCADORES",
-  "Use the board tabs to switch between Recent, Bookmarks Bar and folders. Add folders or links from the active board, then drag links into folders.": "Usa las pestañas para cambiar entre Recientes, Barra de marcadores y carpetas. Añade carpetas o enlaces desde el tablero activo y arrastra enlaces dentro de las carpetas.",
+  "Open SECTIONS // BOOKMARK BOARDS to switch between Recent, Bookmarks Bar and folders. Add folders or links from the active board, then drag links into folders.": "Abre SECCIONES // TABLEROS DE MARCADORES para cambiar entre Recientes, Barra de marcadores y carpetas. Añade carpetas o enlaces al tablero activo y arrastra enlaces dentro de las carpetas.",
   "02 // SHOW WHAT YOU NEED": "02 // MUESTRA LO QUE NECESITAS",
-  "Open VISUAL SYSTEM. Turn off simplified mode to reveal the HUD, NODE SIGNALS, tasks and notes. Use widget presets to change panels together, and the top-bar magnifier to collapse or expand Google search.": "Abre SISTEMA VISUAL y desactiva PANEL SIMPLIFICADO para mostrar HUD, SEÑALES DEL NODO, tareas y notas. Usa los preajustes para cambiar varios paneles y la lupa superior para contraer o desplegar la búsqueda de Google.",
+  "Choose OVERVIEW, NODE SIGNALS, TASKS or NOTES from SECTIONS to reveal that panel. Open VISUAL SYSTEM for more controls, and use the dock magnifier to open or collapse Google search.": "Elige RESUMEN, SEÑALES DEL NODO, TAREAS o NOTAS en SECCIONES para mostrar ese panel. Abre SISTEMA VISUAL para ver más controles y usa la lupa del dock para abrir o retraer la búsqueda de Google.",
   "03 // ARRANGE PANELS": "03 // ORDENA LOS PANELES",
   "Enable “SHOW MOVE CONTROLS”, then drag a panel by its dotted handle. Save a dashboard profile when you like the layout.": "Activa «EDITAR DISEÑO // MOSTRAR CONTROLES», luego arrastra los paneles desde el control punteado. Guarda un perfil cuando te guste el diseño.",
   "04 // QUICK SHORTCUTS": "04 // ACCESOS DIRECTOS",
-  "Click an icon in NODE SIGNALS to open its service. Use the + tile to add a shortcut; this opens VISUAL SYSTEM // CUSTOM AI SHORTCUTS, where you can add up to 60 HTTPS links with a name, remove custom links, or hide and restore built-in shortcuts.": "Haz clic en un icono de SEÑALES DEL NODO para abrir el servicio. Usa el botón + para agregar un acceso; abrirá SISTEMA VISUAL // ACCESOS PERSONALIZADOS, donde puedes añadir hasta 60 enlaces HTTPS con nombre, quitar enlaces personalizados u ocultar y restaurar los accesos incluidos.",
+  "Open your services from the bottom dock. Use the + tile to add a shortcut; this opens VISUAL SYSTEM // CUSTOM AI SHORTCUTS, where you can add up to 60 HTTPS links with a name, remove custom links, or hide and restore built-in shortcuts.": "Abre tus servicios desde el dock inferior. Usa el botón + para añadir un acceso; abrirá SISTEMA VISUAL // ACCESOS PERSONALIZADOS, donde puedes agregar hasta 60 enlaces HTTPS con nombre, eliminar accesos propios u ocultar y restaurar los incluidos.",
   "ADD SHORTCUT": "AÑADIR ACCESO",
-  "Recent connections are collapsed by default. Select the Recent tab to expand or collapse them.": "Las conexiones recientes aparecen retraídas por defecto. Selecciona la pestaña Recientes para desplegarlas o retraerlas.",
+  "Recent connections start collapsed. Open SECTIONS // BOOKMARK BOARDS and select Recent to expand or collapse them; use the same menu to switch bookmark boards.": "Las conexiones recientes empiezan retraídas. Abre SECCIONES // TABLEROS DE MARCADORES y selecciona Recientes para desplegarlas o retraerlas; usa el mismo menú para cambiar de tablero.",
+  SECTIONS: "SECCIONES",
+  WORKSPACE: "ESPACIO DE TRABAJO",
+  OVERVIEW: "VISTA GENERAL",
+  "NODE SIGNALS": "SEÑALES DEL NODO",
+  "TASKS & NOTES": "TAREAS Y NOTAS",
+  BOOKMARKS: "MARCADORES",
+  "BOOKMARK BOARDS": "TABLEROS DE MARCADORES",
+  PREFERENCES: "PREFERENCIAS",
   "LOCAL SYSTEM TIME": "HORA LOCAL DEL SISTEMA",
   "LIVE": "EN VIVO",
   "LOCAL ZONE": "ZONA LOCAL",
+  "CLOCK EXTRAS // DISPLAY": "TEXTOS DEL RELOJ // VISUALIZACIÓN",
+  "CHOOSE WHICH SECONDARY TEXTS APPEAR AND SET THEIR COLOR": "ELIGE QUÉ TEXTOS SECUNDARIOS MOSTRAR Y CONFIGURA SU COLOR",
+  "EXTRA TEXT COLOR": "COLOR DE TEXTOS EXTRA",
+  "NODE LABEL": "ETIQUETA DEL NODO",
+  "TIME LABEL / LIVE": "ETIQUETA DE HORA / EN VIVO",
+  "SECONDS": "SEGUNDOS",
+  "TIMEZONE": "ZONA HORARIA",
+  "DATE": "FECHA",
+  "SYSTEM STATUS": "ESTADO DEL SISTEMA",
+  "ACCESS GRANTED": "ACCESO CONCEDIDO",
+  "LINK ARCHIVE READY": "ARCHIVO DE ENLACES LISTO",
+  "AWAITING INPUT": "ESPERANDO ENTRADA",
+  "USER / ONLINE": "USUARIO / EN LÍNEA",
   "Enter a name and a valid HTTPS URL.": "Escribe un nombre y una URL HTTPS válida.",
   "Maximum of 60 custom shortcuts reached.": "Se alcanzó el máximo de 60 accesos personalizados.",
   "START ORGANIZING": "EMPEZAR A ORGANIZAR",
@@ -393,7 +570,9 @@ const translations = {
   "BACKGROUND INTENSITY": "INTENSIDAD DEL FONDO",
   "LOCAL BACKGROUND": "FONDO LOCAL",
   "RESTORE DEFAULT BACKGROUND": "RESTAURAR FONDO PREDETERMINADO",
-  "DEFAULT CITY NODE": "FONDO URBANO PREDETERMINADO",
+  "DEFAULT BACKGROUND": "FONDO PREDETERMINADO",
+  "IMAGE LOAD FAILED": "NO SE PUDO CARGAR LA IMAGEN",
+  "BACKGROUND SAVE FAILED": "NO SE PUDO GUARDAR EL FONDO",
   "SHOW HUD CLOCK": "MOSTRAR RELOJ HUD",
   "SHOW NETRUNNER MESSAGES": "MOSTRAR MENSAJES NETRUNNER",
   "MESSAGE TYPING SPEED": "VELOCIDAD DE ESCRITURA",
@@ -1064,10 +1243,8 @@ function renderCustomAiShortcuts() {
     button.hidden = disabledDefaultShortcuts.includes(button.dataset.defaultShortcut);
   });
 
-  // Render shortcuts in telemetry panel (sidebar)
-  const telemetryProviders = document.querySelector(".telemetry-panel .ai-providers");
-  if (telemetryProviders) {
-    telemetryProviders.replaceChildren();
+  if (dockShortcuts) {
+    dockShortcuts.replaceChildren();
 
     const defaultShortcutsVisible = defaultShortcuts.filter(
       (s) => !disabledDefaultShortcuts.includes(s.id)
@@ -1115,7 +1292,7 @@ function renderCustomAiShortcuts() {
         window.open(shortcut.url, "_blank", "noopener,noreferrer");
       });
 
-      telemetryProviders.append(button);
+      dockShortcuts.append(button);
     });
 
     const addShortcutButton = document.createElement("button");
@@ -1137,9 +1314,9 @@ function renderCustomAiShortcuts() {
       settingsPanel.classList.add("is-open");
       customAiNameInput?.focus();
     });
-    telemetryProviders.append(addShortcutButton);
+    dockShortcuts.append(addShortcutButton);
 
-    telemetryPanel?.classList.toggle(
+    dockShortcuts.classList.toggle(
       "has-shortcut-overflow",
       allShortcuts.length > shortcutScrollThreshold
     );
@@ -1353,11 +1530,179 @@ function updateTelemetry() {
 window.setInterval(updateTelemetry, 1800);
 updateTelemetry();
 
+function isValidHexColor(value) {
+  return typeof value === "string" && /^#[\da-f]{6}$/i.test(value);
+}
+
+function hexToRgba(hex, alpha) {
+  return `rgba(${hexToRgbComponents(hex)}, ${alpha})`;
+}
+
+function hexToRgbComponents(hex) {
+  const value = Number.parseInt(hex.slice(1), 16);
+  return `${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255}`;
+}
+
+function applyAccentColors(primary, accent) {
+  if (!isValidHexColor(primary) || !isValidHexColor(accent)) return false;
+  activePrimaryColor = primary.toLowerCase();
+  activeAccentColor = accent.toLowerCase();
+  const rootStyle = document.documentElement.style;
+  rootStyle.setProperty("--toxic", activePrimaryColor);
+  rootStyle.setProperty("--toxic-rgb", hexToRgbComponents(activePrimaryColor));
+  rootStyle.setProperty("--crimson", activeAccentColor);
+  rootStyle.setProperty("--crimson-rgb", hexToRgbComponents(activeAccentColor));
+  rootStyle.setProperty("--line", hexToRgba(activePrimaryColor, 0.55));
+  rootStyle.setProperty("--glass-border", hexToRgba(activePrimaryColor, 0.24));
+  if (primaryColorInput) primaryColorInput.value = activePrimaryColor;
+  if (accentColorInput) accentColorInput.value = activeAccentColor;
+  return true;
+}
+
+function applyThemePalette(theme) {
+  const palette = themePalettes[theme] || themePalettes["electric-purple"];
+  applyAccentColors(palette.primary, palette.accent);
+  if (customColorStatus) {
+    customColorStatus.textContent = "THEME COLORS ACTIVE // GLASS SURFACES PRESERVED";
+  }
+}
+
+function applyClockExtraSetting(setting, enabled) {
+  const settingEntry = clockExtraSettings.find(([key]) => key === setting);
+  if (!settingEntry) return;
+  const [, className] = settingEntry;
+  document.documentElement.classList.toggle(className, !enabled);
+  const toggle = [...clockExtraToggles].find((item) => item.dataset.clockExtraSetting === setting);
+  if (toggle) toggle.checked = enabled;
+}
+
+function applyClockExtraTextColor(color) {
+  if (!isValidHexColor(color)) return false;
+  document.documentElement.style.setProperty("--clock-extra-text-color", color);
+  document.documentElement.classList.add("clock-extra-custom-color");
+  if (clockExtraTextColorInput) clockExtraTextColorInput.value = color;
+  return true;
+}
+
+async function applyCustomBackground(dataUrl) {
+  const loadSequence = ++backgroundLoadSequence;
+  const match = /^data:image\/(png|jpeg|webp);base64,([\da-z+/=]+)$/i.exec(dataUrl);
+  if (!match || dataUrl.length > 3000000) {
+    if (backgroundFileStatus) {
+      backgroundFileStatus.textContent = translateValue("IMAGE LOAD FAILED", activeLanguage);
+    }
+    return false;
+  }
+
+  let bytes;
+  try {
+    const binary = atob(match[2]);
+    bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index += 1) {
+      bytes[index] = binary.charCodeAt(index);
+    }
+  } catch {
+    if (backgroundFileStatus) {
+      backgroundFileStatus.textContent = translateValue("IMAGE LOAD FAILED", activeLanguage);
+    }
+    return false;
+  }
+
+  const objectUrl = URL.createObjectURL(new Blob([bytes], { type: `image/${match[1].toLowerCase()}` }));
+  const image = new Image();
+  image.src = objectUrl;
+  try {
+    await image.decode();
+  } catch {
+    URL.revokeObjectURL(objectUrl);
+    if (loadSequence !== backgroundLoadSequence) return false;
+    if (backgroundFileStatus) {
+      backgroundFileStatus.textContent = translateValue("IMAGE LOAD FAILED", activeLanguage);
+    }
+    return false;
+  }
+
+  if (loadSequence !== backgroundLoadSequence) {
+    URL.revokeObjectURL(objectUrl);
+    return false;
+  }
+  document.documentElement.style.setProperty("--custom-background-image", `url("${objectUrl}")`);
+  if (backgroundObjectUrl) URL.revokeObjectURL(backgroundObjectUrl);
+  backgroundObjectUrl = objectUrl;
+  if (backgroundFileStatus) backgroundFileStatus.textContent = "CUSTOM IMAGE ACTIVE";
+  return true;
+}
+
+function clearCustomBackground() {
+  backgroundLoadSequence += 1;
+  document.documentElement.style.removeProperty("--custom-background-image");
+  if (backgroundObjectUrl) URL.revokeObjectURL(backgroundObjectUrl);
+  backgroundObjectUrl = null;
+  if (backgroundFileStatus) {
+    backgroundFileStatus.textContent = translateValue("DEFAULT BACKGROUND", activeLanguage);
+  }
+}
+
+function saveBackgroundImage(backgroundImage) {
+  const storage = getChromeStorage();
+  if (storage) {
+    storage.set({ backgroundImage }, () => {
+      if (!getChromeRuntimeLastError()) return;
+      if (backgroundFileStatus) {
+        backgroundFileStatus.textContent = translateValue("BACKGROUND SAVE FAILED", activeLanguage);
+      }
+    });
+    return;
+  }
+
+  try {
+    const settings = JSON.parse(localStorage.getItem("netrunner-bookmarks") || "{}");
+    localStorage.setItem("netrunner-bookmarks", JSON.stringify({ ...settings, backgroundImage }));
+  } catch {
+    if (backgroundFileStatus) {
+      backgroundFileStatus.textContent = translateValue("BACKGROUND SAVE FAILED", activeLanguage);
+    }
+  }
+}
+
+function updateThemeSelection() {
+  themeButtons.forEach((button) => {
+    button.classList.toggle(
+      "is-selected",
+      !customColorsEnabled && button.dataset.theme === activeTheme
+    );
+  });
+  if (customColorStatus) {
+    customColorStatus.textContent = customColorsEnabled
+      ? "CUSTOM NEON COLORS ACTIVE // GLASS SURFACES PRESERVED"
+      : "THEME COLORS ACTIVE // GLASS SURFACES PRESERVED";
+  }
+}
+
 function applyUserSettings(settings = {}) {
+  if (settings.customColorsEnabled === true
+    && isValidHexColor(settings.primaryColor)
+    && isValidHexColor(settings.accentColor)) {
+    customColorsEnabled = true;
+    applyAccentColors(settings.primaryColor, settings.accentColor);
+  } else if (settings.customColorsEnabled === false) {
+    customColorsEnabled = false;
+    applyThemePalette(settings.theme || activeTheme);
+  } else if (typeof settings.theme === "string") {
+    customColorsEnabled = false;
+    applyThemePalette(settings.theme);
+  }
+  updateThemeSelection();
+
   if (typeof settings.clockUses12Hour === "boolean") {
     clockUses12Hour = settings.clockUses12Hour;
     updateHud();
   }
+  clockExtraSettings.forEach(([key]) => {
+    if (typeof settings[key] !== "boolean") return;
+    applyClockExtraSetting(key, settings[key]);
+  });
+  if (settings.clockExtraTextColor) applyClockExtraTextColor(settings.clockExtraTextColor);
 
   if (settings.backgroundIntensity && backgroundIntensity) {
     document.documentElement.style.setProperty(
@@ -1368,19 +1713,17 @@ function applyUserSettings(settings = {}) {
   }
 
   if (typeof settings.backgroundImage === "string") {
-    if (settings.backgroundImage.startsWith("data:image/")) {
-      document.documentElement.style.setProperty("--custom-background-image", `url("${settings.backgroundImage}")`);
-      document.documentElement.classList.add("custom-background-active");
-      if (backgroundFileStatus) backgroundFileStatus.textContent = "CUSTOM IMAGE ACTIVE";
+    if (settings.backgroundImage) {
+      void applyCustomBackground(settings.backgroundImage);
     } else if (!settings.backgroundImage) {
-      document.documentElement.style.removeProperty("--custom-background-image");
-      document.documentElement.classList.remove("custom-background-active");
-      if (backgroundFileStatus) backgroundFileStatus.textContent = "DEFAULT CITY NODE";
+      clearCustomBackground();
     }
   }
 
   const hudEnabled = settings.hudEnabled !== false;
-  const messagesEnabled = settings.quotesEnabled !== false;
+  const messagesEnabled = typeof settings.quotesEnabled === "boolean"
+    ? settings.quotesEnabled
+    : quotesEnabled;
   quotesEnabled = messagesEnabled;
   quoteTypingDelay = Number(settings.typingSpeed) || 82;
   document.documentElement.classList.toggle("hud-disabled", !hudEnabled);
@@ -1395,8 +1738,8 @@ function applyUserSettings(settings = {}) {
     reducedMotionToggle.checked = reducedMotion;
   }
 
-  const tasksVisible = settings.tasksWidgetVisible !== false;
-  const notesVisible = settings.notesWidgetVisible !== false;
+  const tasksVisible = settings.tasksWidgetVisible === true;
+  const notesVisible = settings.notesWidgetVisible === true;
   document.documentElement.classList.toggle("tasks-widget-hidden", !tasksVisible);
   document.documentElement.classList.toggle("notes-widget-hidden", !notesVisible);
   if (tasksWidgetToggle) tasksWidgetToggle.checked = tasksVisible;
@@ -1422,6 +1765,7 @@ function applyUserSettings(settings = {}) {
     ...widgetVisibility,
     ...(settings.widgetVisibility || {}),
   };
+  document.documentElement.classList.toggle("node-signals-hidden", widgetVisibility.telemetry === false);
   Object.entries(widgetElements).forEach(([name, element]) => {
     if (element) {
       element.classList.toggle("widget-is-hidden", widgetVisibility[name] === false);
@@ -1440,6 +1784,7 @@ function applyUserSettings(settings = {}) {
   widgetPresetButtons.forEach((button) => {
     button.classList.toggle("is-selected", activePreset?.[0] === button.dataset.preset);
   });
+  syncDockWidgetMenuState();
 }
 
 function saveUserSettings(settings) {
@@ -1457,6 +1802,7 @@ function saveUserSettings(settings) {
 
 const exportSettingKeys = [
   "backgroundIntensity", "backgroundImage", "reducedMotion", "displayName",
+  "customColorsEnabled", "primaryColor", "accentColor",
   "hudEnabled", "quotesEnabled", "typingSpeed", "customBrandName",
   "customAiShortcuts", "localTasks", "localNote", "tasksWidgetVisible",
   "notesWidgetVisible", "moveControlsVisible", "widgetSize", "columns",
@@ -1464,6 +1810,11 @@ const exportSettingKeys = [
   "density", "onboardingComplete", "disabledDefaultShortcuts", "theme",
   "dashboardProfiles", "keyboardShortcuts", "simplifiedMode", "fullScreenLayout",
   "clockUses12Hour",
+  "clockShowNodeLabel", "clockShowHeading", "clockShowSeconds",
+  "clockShowTimezone", "clockShowDate", "clockShowStatus",
+  "clockShowAccessGranted", "clockShowLinkArchive",
+  "clockShowAwaitingInput", "clockShowUserStatus",
+  "clockExtraTextColor",
 ];
 const shortcutActions = [
   { id: "focusSearch", label: "FOCUS SEARCH", key: "s" },
@@ -1482,27 +1833,41 @@ const defaultExportSettings = {
   reducedMotion: false,
   displayName: "",
   hudEnabled: true,
-  quotesEnabled: true,
+  quotesEnabled: false,
   typingSpeed: "82",
   customBrandName: "DEMONTECH-BOOKMARKS",
   customAiShortcuts: [],
   localTasks: [],
   localNote: "",
-  tasksWidgetVisible: true,
-  notesWidgetVisible: true,
+  tasksWidgetVisible: false,
+  notesWidgetVisible: false,
   moveControlsVisible: false,
   widgetSize: "balanced",
   columns: "2",
   glassOpacity: "0.58",
   iconSize: "32",
   language: "en",
-  widgetVisibility: { hud: true, telemetry: true, productivity: true, bookmarks: true },
+  widgetVisibility: { hud: true, telemetry: false, productivity: true, bookmarks: true },
   widgetOrder: ["hud", "productivity", "bookmarks"],
   density: "balanced",
   onboardingComplete: false,
   simplifiedMode: true,
   fullScreenLayout: false,
   clockUses12Hour: false,
+  clockShowNodeLabel: false,
+  clockShowHeading: false,
+  clockShowSeconds: false,
+  clockShowTimezone: false,
+  clockShowDate: false,
+  clockShowStatus: false,
+  clockShowAccessGranted: false,
+  clockShowLinkArchive: false,
+  clockShowAwaitingInput: false,
+  clockShowUserStatus: false,
+  clockExtraTextColor: "#d8b4ff",
+  customColorsEnabled: false,
+  primaryColor: "#b026ff",
+  accentColor: "#ff003c",
   disabledDefaultShortcuts: [],
   theme: "electric-purple",
   dashboardProfiles: [],
@@ -1534,8 +1899,16 @@ function getDashboardSnapshot() {
     widgetOrder: [...widgetOrder],
     density: activeDensity,
     theme: activeTheme,
+    customColorsEnabled,
+    primaryColor: activePrimaryColor,
+    accentColor: activeAccentColor,
     simplifiedMode: simpleModeToggle?.checked === true,
     fullScreenLayout: fullScreenLayoutToggle?.checked === true,
+    clockExtraTextColor: clockExtraTextColorInput?.value || "#d8b4ff",
+    ...Object.fromEntries(clockExtraSettings.map(([key]) => [
+      key,
+      [...clockExtraToggles].find((toggle) => toggle.dataset.clockExtraSetting === key)?.checked === true,
+    ])),
   };
   return snapshot;
 }
@@ -1768,13 +2141,21 @@ function validateImportedSettings(payload) {
   [
     "reducedMotion", "hudEnabled", "quotesEnabled", "tasksWidgetVisible",
     "notesWidgetVisible", "moveControlsVisible", "onboardingComplete", "simplifiedMode",
-    "fullScreenLayout", "clockUses12Hour",
+    "fullScreenLayout", "clockUses12Hour", "customColorsEnabled",
+    "clockShowNodeLabel", "clockShowHeading", "clockShowSeconds",
+    "clockShowTimezone", "clockShowDate", "clockShowStatus",
+    "clockShowAccessGranted", "clockShowLinkArchive",
+    "clockShowAwaitingInput", "clockShowUserStatus",
   ].forEach((key) => {
     if (key in raw) {
       if (typeof raw[key] !== "boolean") throw new Error(`Invalid ${key}.`);
       settings[key] = raw[key];
     }
   });
+  if ("clockExtraTextColor" in raw) {
+    if (!isValidHexColor(raw.clockExtraTextColor)) throw new Error("Invalid clock extra text color.");
+    settings.clockExtraTextColor = raw.clockExtraTextColor;
+  }
   if ("typingSpeed" in raw) {
     const value = Number(raw.typingSpeed);
     if (!Number.isFinite(value) || value < 35 || value > 180) throw new Error("Invalid typing speed.");
@@ -1808,6 +2189,19 @@ function validateImportedSettings(payload) {
       throw new Error("Invalid background image.");
     }
     settings.backgroundImage = raw.backgroundImage;
+  }
+  ["primaryColor", "accentColor"].forEach((key) => {
+    if (key in raw) {
+      if (!isValidHexColor(raw[key])) throw new Error(`Invalid ${key}.`);
+      settings[key] = raw[key].toLowerCase();
+    }
+  });
+  if (("primaryColor" in raw) !== ("accentColor" in raw)) {
+    throw new Error("Primary and accent colors must be provided together.");
+  }
+  if (settings.customColorsEnabled === true
+    && (!isValidHexColor(settings.primaryColor) || !isValidHexColor(settings.accentColor))) {
+    throw new Error("Custom colors require valid primary and accent colors.");
   }
   if ("localTasks" in raw) {
     if (!Array.isArray(raw.localTasks) || raw.localTasks.length > 100
@@ -1905,7 +2299,11 @@ function validateImportedSettings(payload) {
         "quotesEnabled", "typingSpeed", "tasksWidgetVisible", "notesWidgetVisible",
         "moveControlsVisible", "widgetSize", "columns", "glassOpacity", "iconSize",
         "language", "widgetVisibility", "widgetOrder", "density", "theme",
-        "simplifiedMode", "fullScreenLayout",
+        "simplifiedMode", "fullScreenLayout", "customColorsEnabled", "primaryColor", "accentColor",
+        "clockShowNodeLabel", "clockShowHeading", "clockShowSeconds",
+        "clockShowTimezone", "clockShowDate", "clockShowStatus",
+        "clockShowAccessGranted", "clockShowLinkArchive",
+        "clockShowAwaitingInput", "clockShowUserStatus", "clockExtraTextColor",
       ];
       const profileSettings = Object.fromEntries(Object.entries(profile.settings || {})
         .filter(([key]) => profileSettingKeys.includes(key)));
@@ -2038,12 +2436,13 @@ backgroundFileInput?.addEventListener("change", () => {
 
   const reader = new FileReader();
   reader.addEventListener("load", () => {
-    if (typeof reader.result !== "string" || !reader.result.startsWith("data:image/")) {
+    if (typeof reader.result !== "string") {
       if (backgroundFileStatus) backgroundFileStatus.textContent = translateValue("IMAGE READ FAILED", activeLanguage);
       return;
     }
-    saveUserSettings({ backgroundImage: reader.result });
-    applyUserSettings({ backgroundImage: reader.result });
+    void applyCustomBackground(reader.result).then((applied) => {
+      if (applied) saveBackgroundImage(reader.result);
+    });
   });
   reader.addEventListener("error", () => {
     if (backgroundFileStatus) backgroundFileStatus.textContent = translateValue("IMAGE READ FAILED", activeLanguage);
@@ -2052,16 +2451,9 @@ backgroundFileInput?.addEventListener("change", () => {
 });
 
 resetBackgroundButton?.addEventListener("click", () => {
-  document.documentElement.style.removeProperty("--custom-background-image");
-  document.documentElement.classList.remove("custom-background-active");
   if (backgroundFileInput) backgroundFileInput.value = "";
-  if (backgroundFileStatus) backgroundFileStatus.textContent = translateValue("DEFAULT CITY NODE", activeLanguage);
-  const storage = getChromeStorage();
-  if (storage) {
-    storage.remove("backgroundImage");
-  } else {
-    localStorage.removeItem("backgroundImage");
-  }
+  applyUserSettings({ backgroundImage: "" });
+  saveBackgroundImage("");
 });
 
 reducedMotionToggle?.addEventListener("change", () => {
@@ -2117,6 +2509,20 @@ fullScreenLayoutToggle?.addEventListener("change", () => {
   const fullScreenLayout = fullScreenLayoutToggle.checked;
   applyUserSettings({ fullScreenLayout });
   saveUserSettings({ fullScreenLayout });
+});
+
+clockExtraToggles.forEach((toggle) => {
+  toggle.addEventListener("change", () => {
+    const setting = toggle.dataset.clockExtraSetting;
+    applyClockExtraSetting(setting, toggle.checked);
+    saveUserSettings({ [setting]: toggle.checked });
+  });
+});
+
+clockExtraTextColorInput?.addEventListener("input", () => {
+  const clockExtraTextColor = clockExtraTextColorInput.value;
+  if (!applyClockExtraTextColor(clockExtraTextColor)) return;
+  saveUserSettings({ clockExtraTextColor });
 });
 
 widgetSizeButtons.forEach((button) => {
@@ -2194,6 +2600,7 @@ chrome.storage?.local?.get(
     "localNote",
     "tasksWidgetVisible",
     "notesWidgetVisible",
+    "productivityWidgetsDefaultHidden",
     "moveControlsVisible",
     "widgetSize",
     "columns",
@@ -2201,16 +2608,75 @@ chrome.storage?.local?.get(
     "iconSize",
     "language",
     "widgetVisibility",
+    "nodeSignalsDefaultHidden",
     "widgetOrder",
     "density",
     "onboardingComplete",
     "simplifiedMode",
     "fullScreenLayout",
+    "clockShowNodeLabel",
+    "clockShowHeading",
+    "clockShowSeconds",
+    "clockShowTimezone",
+    "clockShowDate",
+    "clockShowStatus",
+    "clockShowAccessGranted",
+    "clockShowLinkArchive",
+    "clockShowAwaitingInput",
+    "clockShowUserStatus",
+    "clockExtraTextColor",
+    "clockExtrasDefaultHidden",
+    "hudSignalTextsDefaultHidden",
+    "customColorsEnabled",
+    "primaryColor",
+    "accentColor",
     "theme",
     "dashboardProfiles",
     "keyboardShortcuts",
   ],
   (settings) => {
+    if (settings.nodeSignalsDefaultHidden !== true) {
+      settings.widgetVisibility = {
+        ...settings.widgetVisibility,
+        telemetry: false,
+      };
+      saveUserSettings({
+        widgetVisibility: settings.widgetVisibility,
+        nodeSignalsDefaultHidden: true,
+      });
+    }
+    if (settings.clockExtrasDefaultHidden !== true) {
+      clockExtraSettings.forEach(([key]) => {
+        settings[key] = false;
+      });
+      settings.quotesEnabled = false;
+      saveUserSettings({
+        ...Object.fromEntries(clockExtraSettings.map(([key]) => [key, false])),
+        quotesEnabled: false,
+        clockExtrasDefaultHidden: true,
+      });
+    }
+    if (settings.hudSignalTextsDefaultHidden !== true) {
+      const signalTextDefaults = {
+        clockShowAccessGranted: false,
+        clockShowLinkArchive: false,
+        clockShowAwaitingInput: false,
+        clockShowUserStatus: false,
+        quotesEnabled: false,
+        hudSignalTextsDefaultHidden: true,
+      };
+      Object.assign(settings, signalTextDefaults);
+      saveUserSettings(signalTextDefaults);
+    }
+    if (settings.productivityWidgetsDefaultHidden !== true) {
+      settings.tasksWidgetVisible = false;
+      settings.notesWidgetVisible = false;
+      saveUserSettings({
+        tasksWidgetVisible: false,
+        notesWidgetVisible: false,
+        productivityWidgetsDefaultHidden: true,
+      });
+    }
     if (typeof settings.simplifiedMode !== "boolean") {
       settings.simplifiedMode = settings.onboardingComplete !== true;
       saveUserSettings({ simplifiedMode: settings.simplifiedMode });
@@ -2266,7 +2732,7 @@ chrome.storage?.local?.get(
   }
 );
 
-const themeNames = ["electric-purple", "neon-pink", "night-city", "black-ice"];
+const themeNames = Object.keys(themePalettes);
 
 if (settingsToggle && settingsContent) {
   settingsToggle.addEventListener("click", () => {
@@ -2284,9 +2750,8 @@ function applyTheme(theme) {
 
   activeTheme = theme;
   document.documentElement.dataset.theme = theme;
-  themeButtons.forEach((button) => {
-    button.classList.toggle("is-selected", button.dataset.theme === theme);
-  });
+  if (!customColorsEnabled) applyThemePalette(theme);
+  updateThemeSelection();
   const storage = getChromeStorage();
   if (storage) {
     storage.set({ theme });
@@ -2300,7 +2765,50 @@ function applyTheme(theme) {
 }
 
 themeButtons.forEach((button) => {
-  button.addEventListener("click", () => applyTheme(button.dataset.theme));
+  button.addEventListener("click", () => {
+    customColorsEnabled = false;
+    const palette = themePalettes[button.dataset.theme];
+    if (!palette) return;
+    applyTheme(button.dataset.theme);
+    saveUserSettings({
+      customColorsEnabled: false,
+      primaryColor: palette.primary,
+      accentColor: palette.accent,
+    });
+  });
+});
+
+function activateCustomColors() {
+  if (!applyAccentColors(primaryColorInput?.value, accentColorInput?.value)) return;
+  customColorsEnabled = true;
+  updateThemeSelection();
+}
+
+primaryColorInput?.addEventListener("input", activateCustomColors);
+accentColorInput?.addEventListener("input", activateCustomColors);
+
+const saveCustomColors = () => {
+  if (!customColorsEnabled) return;
+  saveUserSettings({
+    customColorsEnabled: true,
+    primaryColor: activePrimaryColor,
+    accentColor: activeAccentColor,
+  });
+};
+
+primaryColorInput?.addEventListener("change", saveCustomColors);
+accentColorInput?.addEventListener("change", saveCustomColors);
+
+resetCustomColorsButton?.addEventListener("click", () => {
+  customColorsEnabled = false;
+  applyThemePalette(activeTheme);
+  updateThemeSelection();
+  const palette = themePalettes[activeTheme];
+  saveUserSettings({
+    customColorsEnabled: false,
+    primaryColor: palette.primary,
+    accentColor: palette.accent,
+  });
 });
 
 const themeStorage = getChromeStorage();
@@ -2822,6 +3330,9 @@ function createBoardButton(board, label, isActive = false) {
     : String(flattenBookmarks([board]).length).padStart(2, "0");
   button.append(icon, labelNode, count);
   button.addEventListener("click", () => {
+    if (dockSectionsMenu && !dockSectionsMenu.hidden) {
+      closeDockSectionsMenu();
+    }
     if (activeBoardId === board.id) {
       if (boardId === "recent") {
         recentGridIsCollapsed = !recentGridIsCollapsed;

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-density="balanced" class="simplified-dashboard search-navbar-collapsed">
+<html lang="en" data-density="balanced" class="simplified-dashboard search-navbar-collapsed node-signals-hidden clock-node-label-hidden clock-heading-hidden clock-seconds-hidden clock-timezone-hidden clock-date-hidden clock-status-hidden clock-access-hidden clock-archive-hidden clock-awaiting-hidden clock-user-hidden clock-extra-custom-color quotes-disabled">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -22,11 +22,11 @@
         <h2 id="onboarding-title">YOUR DASHBOARD, YOUR WAY</h2>
         <p class="onboarding-lead">Start with a clean workspace. Add only the panels you need; your bookmarks and settings stay on this device.</p>
         <ol class="onboarding-steps">
-          <li><strong>01 // BOOKMARKS</strong><span>Use the board tabs to switch between Recent, Bookmarks Bar and folders. Add folders or links from the active board, then drag links into folders.</span></li>
-          <li><strong>02 // SHOW WHAT YOU NEED</strong><span>Open VISUAL SYSTEM. Turn off simplified mode to reveal the HUD, NODE SIGNALS, tasks and notes. Use widget presets to change panels together, and the top-bar magnifier to collapse or expand Google search.</span></li>
+          <li><strong>01 // BOOKMARKS</strong><span>Open SECTIONS // BOOKMARK BOARDS to switch between Recent, Bookmarks Bar and folders. Add folders or links from the active board, then drag links into folders.</span></li>
+          <li><strong>02 // SHOW WHAT YOU NEED</strong><span>Choose OVERVIEW, NODE SIGNALS, TASKS or NOTES from SECTIONS to reveal that panel. Open VISUAL SYSTEM for more controls, and use the dock magnifier to open or collapse Google search.</span></li>
           <li><strong>03 // ARRANGE PANELS</strong><span>Enable “SHOW MOVE CONTROLS”, then drag a panel by its dotted handle. Save a dashboard profile when you like the layout.</span></li>
-          <li><strong>04 // QUICK SHORTCUTS</strong><span>Click an icon in NODE SIGNALS to open its service. Use the + tile to add a shortcut; this opens VISUAL SYSTEM // CUSTOM AI SHORTCUTS, where you can add up to 60 HTTPS links with a name, remove custom links, or hide and restore built-in shortcuts.</span></li>
-          <li><strong>05 // RECENT CONNECTIONS</strong><span>Recent connections start collapsed. Select the Recent tab in the bottom bar to expand or collapse them.</span></li>
+          <li><strong>04 // QUICK SHORTCUTS</strong><span>Open your services from the bottom dock. Use the + tile to add a shortcut; this opens VISUAL SYSTEM // CUSTOM AI SHORTCUTS, where you can add up to 60 HTTPS links with a name, remove custom links, or hide and restore built-in shortcuts.</span></li>
+          <li><strong>05 // RECENT CONNECTIONS</strong><span>Recent connections start collapsed. Open SECTIONS // BOOKMARK BOARDS and select Recent to expand or collapse them; use the same menu to switch bookmark boards.</span></li>
         </ol>
         <div class="onboarding-actions">
           <button id="onboarding-organize" class="settings-action onboarding-close" type="button">START ORGANIZING</button>
@@ -34,12 +34,8 @@
         </div>
       </div>
     </section>
-    <nav id="shortcuts-navbar" class="shortcuts-navbar is-search-collapsed" aria-label="Quick access and search">
+    <nav id="shortcuts-navbar" class="shortcuts-navbar is-search-collapsed" aria-label="Google search">
       <div class="navbar-container is-search-collapsed">
-        <div class="navbar-brand" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-          <span>DEMONTECH</span>
-        </div>
         <div id="navbar-search-region" class="navbar-center is-collapsed" inert>
           <div class="navbar-search" role="search">
             <span class="search-prefix" aria-hidden="true">>_</span>
@@ -53,19 +49,6 @@
             />
           </div>
         </div>
-        <div class="navbar-actions">
-          <button
-            id="navbar-search-toggle"
-            class="navbar-icon-btn navbar-search-toggle"
-            type="button"
-            aria-expanded="false"
-            aria-controls="navbar-search-region"
-            aria-label="Show Google search"
-            title="Show Google search"
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.3"/><path d="m16 16 4.5 4.5"/></svg>
-          </button>
-        </div>
       </div>
     </nav>
 
@@ -75,7 +58,7 @@
 
     <main class="dashboard">
       <aside class="dashboard-sidebar">
-        <section class="telemetry-panel" aria-label="System telemetry">
+        <section id="node-signals" class="telemetry-panel" aria-label="System telemetry">
           <div class="telemetry-header">NODE SIGNALS</div>
           <div class="telemetry-row">
             <span>LINKS</span>
@@ -96,56 +79,54 @@
             </div>
             <div class="telemetry-bar"><span id="telemetry-bar-fill"></span></div>
           </div>
-          <div class="ai-providers" role="group" aria-label="AI providers"></div>
         </section>
        </aside>
 
       <section class="workspace">
-        <section class="hud widget-sortable" data-widget-id="hud" aria-label="Netrunner status">
+        <section id="hud-section" class="hud widget-sortable" data-widget-id="hud" aria-label="Netrunner status">
           <button class="widget-drag-handle" type="button" draggable="true" aria-label="Drag HUD widget to reorder">⋮⋮</button>
-          <h1 class="brand-title workspace-brand" data-glitch="DEMONTECH-BOOKMARKS">
-            <span class="brand-name" data-text="DEMONTECH-BOOKMARKS">DEMONTECH-BOOKMARKS</span>
-          </h1>
-          <div class="hud-meta">
-            <div class="hero-terminal" aria-label="Netrunner node status">
-              <span class="hero-terminal-line">ACCESS GRANTED</span>
-              <span class="hero-terminal-line">LINK ARCHIVE READY</span>
-              <span class="hero-terminal-line hero-terminal-line--muted">AWAITING INPUT<span class="terminal-cursor">_</span></span>
+          <div class="clock-center-group">
+            <div class="hud-meta">
+              <div class="hero-terminal" aria-label="Netrunner node status">
+                <span class="hero-terminal-line clock-extra-access">ACCESS GRANTED</span>
+                <span class="hero-terminal-line clock-extra-archive">LINK ARCHIVE READY</span>
+                <span class="hero-terminal-line hero-terminal-line--muted clock-extra-awaiting">AWAITING INPUT<span class="terminal-cursor">_</span></span>
+              </div>
+              <div class="hero-signal clock-extra-user">USER: <strong id="profile-name">RUNNER</strong> <span>● ONLINE</span></div>
             </div>
-            <div class="hero-signal">USER: <strong id="profile-name">RUNNER</strong> <span>● ONLINE</span></div>
-          </div>
-          <div class="hud-label">NIGHT CITY // DEMONTECH NODE</div>
-          <div class="hud-clock-card" aria-label="Local system time">
-            <div class="clock-card-heading">
-              <span class="clock-card-label" data-i18n>LOCAL SYSTEM TIME</span>
-              <span class="clock-live"><span aria-hidden="true"></span><span data-i18n>LIVE</span></span>
-            </div>
-            <div class="clock-readout">
-              <time id="hud-clock" class="hud-clock" datetime="" role="button" tabindex="0" aria-live="off" title="Switch to 12-hour time">
-                <span id="clock-hours">00</span>
-                <span class="clock-separator" aria-hidden="true">:</span>
-                <span id="clock-minutes">00</span>
-              </time>
-              <div class="clock-secondary">
-                <div class="clock-seconds-row">
-                  <span id="clock-seconds" class="clock-seconds">00</span>
-                  <span id="clock-period" class="clock-period" hidden></span>
+            <div class="hud-label">NIGHT CITY // DEMONTECH NODE</div>
+            <div class="hud-clock-card" aria-label="Local system time">
+              <div class="clock-card-heading">
+                <span class="clock-card-label" data-i18n>LOCAL SYSTEM TIME</span>
+                <span class="clock-live"><span aria-hidden="true"></span><span data-i18n>LIVE</span></span>
+              </div>
+              <div class="clock-readout">
+                <time id="hud-clock" class="hud-clock" datetime="" role="button" tabindex="0" aria-live="off" title="Switch to 12-hour time">
+                  <span id="clock-hours">00</span>
+                  <span class="clock-separator" aria-hidden="true">:</span>
+                  <span id="clock-minutes">00</span>
+                </time>
+                <div class="clock-secondary">
+                  <div class="clock-seconds-row">
+                    <span id="clock-seconds" class="clock-seconds">00</span>
+                    <span id="clock-period" class="clock-period" hidden></span>
+                  </div>
+                  <span class="clock-timezone"><span data-i18n>LOCAL ZONE</span><strong id="clock-timezone">LOCAL</strong></span>
                 </div>
-                <span class="clock-timezone"><span data-i18n>LOCAL ZONE</span><strong id="clock-timezone">LOCAL</strong></span>
               </div>
-            </div>
-            <div class="clock-card-footer">
-              <div id="hud-date" class="hud-date">
-                <span id="hud-weekday" class="hud-weekday">LOADING</span>
-                <span id="hud-date-value" class="hud-date-value">DATE</span>
+              <div class="clock-card-footer">
+                <div id="hud-date" class="hud-date">
+                  <span id="hud-weekday" class="hud-weekday">LOADING</span>
+                  <span id="hud-date-value" class="hud-date-value">DATE</span>
+                </div>
               </div>
+              <div class="clock-minute-track" aria-hidden="true"><span id="clock-minute-progress"></span></div>
             </div>
-            <div class="clock-minute-track" aria-hidden="true"><span id="clock-minute-progress"></span></div>
+            <div class="hud-status"><span>●</span> SYSTEM ONLINE</div>
+            <blockquote id="hud-quote" class="hud-quote">“The net remembers everything.”</blockquote>
           </div>
-          <div class="hud-status"><span>●</span> SYSTEM ONLINE</div>
-          <blockquote id="hud-quote" class="hud-quote">“The net remembers everything.”</blockquote>
 </section>
-        <section class="productivity-grid widget-sortable" data-widget-id="productivity" aria-label="Local productivity widgets">
+        <section id="productivity-section" class="productivity-grid widget-sortable" data-widget-id="productivity" aria-label="Local productivity widgets">
           <button class="widget-drag-handle" type="button" draggable="true" aria-label="Drag productivity widgets to reorder">⋮⋮</button>
           <article id="tasks-widget" class="productivity-widget">
             <div class="widget-heading">
@@ -169,7 +150,7 @@
           </article>
         </section>
 
-        <section class="bookmarks-section widget-sortable" data-widget-id="bookmarks" aria-labelledby="bookmarks-title">
+        <section id="bookmarks-section" class="bookmarks-section widget-sortable" data-widget-id="bookmarks" aria-labelledby="bookmarks-title">
           <button class="widget-drag-handle" type="button" draggable="true" aria-label="Drag bookmarks widget to reorder">⋮⋮</button>
           <div class="section-heading visually-hidden">
             <div>
@@ -241,15 +222,36 @@
             <div class="setting-row">
               <label class="settings-label" for="background-file-input">LOCAL BACKGROUND</label>
               <input id="background-file-input" class="settings-file" type="file" accept="image/png,image/jpeg,image/webp" />
+              <span class="settings-hint">PNG / JPG / WEBP // MAX 2 MB // STORED LOCALLY</span>
               <button id="reset-background-button" class="settings-reset" type="button">RESTORE DEFAULT BACKGROUND</button>
-              <span id="background-file-status" class="settings-hint">DEFAULT CITY NODE</span>
+              <span id="background-file-status" class="settings-hint">DEFAULT BACKGROUND</span>
             </div>
             <label class="settings-check">
               <input id="hud-toggle" type="checkbox" checked />
               <span>SHOW HUD CLOCK</span>
             </label>
+            <div class="setting-row clock-extra-settings">
+              <span class="settings-label">CLOCK EXTRAS // DISPLAY</span>
+              <span class="settings-hint">CHOOSE WHICH SECONDARY TEXTS APPEAR AND SET THEIR COLOR</span>
+              <label class="custom-color-control" for="clock-extra-text-color">
+                <span>EXTRA TEXT COLOR</span>
+                <input id="clock-extra-text-color" class="custom-color-input" type="color" value="#d8b4ff" />
+              </label>
+              <div class="clock-extra-options">
+                <label class="settings-check"><input type="checkbox" data-clock-extra-setting="clockShowNodeLabel" /><span>NODE LABEL</span></label>
+                <label class="settings-check"><input type="checkbox" data-clock-extra-setting="clockShowHeading" /><span>TIME LABEL / LIVE</span></label>
+                <label class="settings-check"><input type="checkbox" data-clock-extra-setting="clockShowSeconds" /><span>SECONDS</span></label>
+                <label class="settings-check"><input type="checkbox" data-clock-extra-setting="clockShowTimezone" /><span>TIMEZONE</span></label>
+                <label class="settings-check"><input type="checkbox" data-clock-extra-setting="clockShowDate" /><span>DATE</span></label>
+                <label class="settings-check"><input type="checkbox" data-clock-extra-setting="clockShowStatus" /><span>SYSTEM STATUS</span></label>
+                <label class="settings-check"><input type="checkbox" data-clock-extra-setting="clockShowAccessGranted" /><span>ACCESS GRANTED</span></label>
+                <label class="settings-check"><input type="checkbox" data-clock-extra-setting="clockShowLinkArchive" /><span>LINK ARCHIVE READY</span></label>
+                <label class="settings-check"><input type="checkbox" data-clock-extra-setting="clockShowAwaitingInput" /><span>AWAITING INPUT</span></label>
+                <label class="settings-check"><input type="checkbox" data-clock-extra-setting="clockShowUserStatus" /><span>USER / ONLINE</span></label>
+              </div>
+            </div>
             <label class="settings-check">
-              <input id="quotes-toggle" type="checkbox" checked />
+              <input id="quotes-toggle" type="checkbox" />
               <span>SHOW NETRUNNER MESSAGES</span>
             </label>
             <div class="setting-row">
@@ -314,6 +316,21 @@
               <button class="theme-button" type="button" data-theme="black-ice">BLACK ICE</button>
             </div>
             <div class="setting-row">
+              <span class="settings-label">CUSTOM NEON COLORS</span>
+              <div class="custom-color-grid">
+                <label class="custom-color-control" for="primary-color-input">
+                  <span>PRIMARY GLOW</span>
+                  <input id="primary-color-input" class="custom-color-input" type="color" value="#b026ff" />
+                </label>
+                <label class="custom-color-control" for="accent-color-input">
+                  <span>ACCENT GLOW</span>
+                  <input id="accent-color-input" class="custom-color-input" type="color" value="#ff003c" />
+                </label>
+              </div>
+              <button id="reset-custom-colors-button" class="settings-reset" type="button">RESET TO THEME COLORS</button>
+              <span id="custom-color-status" class="settings-hint" aria-live="polite">THEME COLORS ACTIVE // GLASS SURFACES PRESERVED</span>
+            </div>
+            <div class="setting-row">
               <label class="settings-label" for="glass-opacity">GLASS TRANSPARENCY</label>
               <input id="glass-opacity" class="settings-range" type="range" min="0.25" max="0.85" step="0.05" value="0.58" />
               <span id="glass-opacity-status" class="settings-hint">58% SURFACE OPACITY</span>
@@ -366,9 +383,46 @@
         </section>
       </section>
     </main>
-    <nav class="bookmark-dock" aria-label="Bookmark navigation">
-      <div class="board-bar">
-        <div id="board-nav" class="board-nav" role="tablist" aria-label="Bookmark boards"></div>
+    <nav class="bookmark-dock" aria-label="Quick access and sections">
+      <div class="bookmark-dock-shell">
+        <div class="ai-providers dock-shortcuts" role="group" aria-label="Quick access shortcuts"></div>
+        <span class="dock-divider" aria-hidden="true"></span>
+        <div class="dock-actions">
+          <button id="dock-sections-toggle" class="dock-action" type="button" aria-expanded="false" aria-controls="dock-sections-menu">
+            <span class="dock-action-icon" aria-hidden="true">☰</span>
+            <span>SECTIONS</span>
+            <span class="dock-chevron" aria-hidden="true">⌃</span>
+          </button>
+          <button
+            id="navbar-search-toggle"
+            class="dock-search-toggle"
+            type="button"
+            aria-expanded="false"
+            aria-controls="navbar-search-region"
+            aria-label="Show Google search"
+            title="Show Google search"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.3"/><path d="m16 16 4.5 4.5"/></svg>
+          </button>
+        </div>
+      </div>
+      <div id="dock-sections-menu" class="dock-sections-menu" hidden>
+        <div class="dock-menu-group">
+          <span class="dock-menu-heading">WORKSPACE</span>
+          <button class="dock-menu-link" type="button" data-dock-target="hud-section"><span aria-hidden="true">⌂</span> OVERVIEW</button>
+          <button class="dock-menu-link" type="button" data-dock-target="node-signals" data-dock-toggle="telemetry" aria-expanded="false"><span aria-hidden="true">⌁</span> NODE SIGNALS</button>
+          <button class="dock-menu-link" type="button" data-dock-target="tasks-widget" data-dock-toggle="tasksWidgetVisible" aria-expanded="false"><span aria-hidden="true">✓</span> LOCAL QUEUE</button>
+          <button class="dock-menu-link" type="button" data-dock-target="notes-widget" data-dock-toggle="notesWidgetVisible" aria-expanded="false"><span aria-hidden="true">▤</span> LOCAL BUFFER</button>
+          <button class="dock-menu-link" type="button" data-dock-target="bookmarks-section"><span aria-hidden="true">◇</span> BOOKMARKS</button>
+        </div>
+        <div class="dock-menu-group dock-menu-boards">
+          <span class="dock-menu-heading">BOOKMARK BOARDS</span>
+          <div id="board-nav" class="board-nav" role="tablist" aria-label="Bookmark boards"></div>
+        </div>
+        <div class="dock-menu-group">
+          <span class="dock-menu-heading">PREFERENCES</span>
+          <button id="dock-settings-button" class="dock-menu-link" type="button"><span aria-hidden="true">⚙</span> VISUAL SYSTEM</button>
+        </div>
       </div>
     </nav>
   </body>
