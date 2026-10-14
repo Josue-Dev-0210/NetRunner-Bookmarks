@@ -99,6 +99,12 @@ const onboardingOverlay = document.querySelector("#onboarding-overlay");
 const onboardingClose = document.querySelector("#onboarding-close");
 const onboardingOrganizeButton = document.querySelector("#onboarding-organize");
 const showTutorialButton = document.querySelector("#show-tutorial-button");
+const onboardingBackground = [
+  document.querySelector("#shortcuts-navbar"),
+  document.querySelector(".dashboard"),
+  document.querySelector(".bookmark-dock"),
+].filter(Boolean);
+const onboardingInertState = new Map();
 const simpleModeToggle = document.querySelector("#simple-mode-toggle");
 const fullScreenLayoutToggle = document.querySelector("#full-screen-layout-toggle");
 const bugReportInput = document.querySelector("#bug-report-input");
@@ -275,6 +281,7 @@ let recentBookmarkCount = null;
 let collapseRecentOnFirstRender = true;
 let recentGridIsCollapsed = true;
 let dashboardProfiles = [];
+let onboardingReturnFocus = null;
 let keyboardShortcuts = {};
 let shortcutRecordingAction = null;
 let activeTheme = "electric-purple";
@@ -1117,13 +1124,30 @@ notesInput?.addEventListener("input", () => {
 });
 
 function showOnboarding() {
-  if (onboardingOverlay) onboardingOverlay.hidden = false;
+  if (!onboardingOverlay || !onboardingOverlay.hidden) return;
+  onboardingReturnFocus = document.activeElement instanceof HTMLElement
+    && document.activeElement !== document.body
+    ? document.activeElement
+    : null;
+  onboardingOverlay.hidden = false;
+  onboardingBackground.forEach((element) => {
+    onboardingInertState.set(element, element.inert);
+    element.inert = true;
+  });
   onboardingClose?.focus();
 }
 
 function hideOnboarding() {
-  if (onboardingOverlay) onboardingOverlay.hidden = true;
+  if (!onboardingOverlay || onboardingOverlay.hidden) return;
+  onboardingOverlay.hidden = true;
+  onboardingBackground.forEach((element) => {
+    element.inert = onboardingInertState.get(element) ?? false;
+  });
+  onboardingInertState.clear();
   saveUserSettings({ onboardingComplete: true });
+  if (onboardingReturnFocus?.isConnected) onboardingReturnFocus.focus();
+  else settingsToggle?.focus();
+  onboardingReturnFocus = null;
 }
 
 onboardingClose?.addEventListener("click", hideOnboarding);
@@ -1137,12 +1161,9 @@ onboardingOrganizeButton?.addEventListener("click", () => {
     moveControlsToggle.checked = true;
     moveControlsToggle.dispatchEvent(new Event("change"));
   }
-  if (onboardingOverlay) onboardingOverlay.hidden = true;
+  hideOnboarding();
 });
 showTutorialButton?.addEventListener("click", showOnboarding);
-onboardingOverlay?.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") hideOnboarding();
-});
 
 function buildBugReport(description) {
   return [
@@ -3647,6 +3668,38 @@ document.addEventListener("click", (event) => {
 });
 
 document.addEventListener("keydown", (event) => {
+  if (onboardingOverlay && !onboardingOverlay.hidden) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      hideOnboarding();
+      return;
+    }
+
+    if (event.key === "Tab") {
+      const focusable = [...onboardingOverlay.querySelectorAll(
+        'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )].filter((element) => element.getClientRects().length > 0);
+      if (!focusable.length) {
+        event.preventDefault();
+        onboardingOverlay.querySelector(".onboarding-card")?.focus();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      const focusIsOutside = !onboardingOverlay.contains(document.activeElement);
+      if (event.shiftKey && (document.activeElement === first || focusIsOutside)) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || focusIsOutside)) {
+        event.preventDefault();
+        first.focus();
+      }
+      return;
+    }
+  }
+
   if (shortcutRecordingAction) {
     if (event.key === "Escape") {
       shortcutRecordingAction = null;
@@ -3674,6 +3727,14 @@ document.addEventListener("keydown", (event) => {
     return;
   }
 
+  if (event.key === "F11" && !event.repeat && !event.altKey && !event.ctrlKey && !event.metaKey) {
+    event.preventDefault();
+    const fullScreenLayout = !document.documentElement.classList.contains("full-screen-layout");
+    applyUserSettings({ fullScreenLayout });
+    saveUserSettings({ fullScreenLayout });
+    return;
+  }
+
   const target = event.target;
   const isEditable = target instanceof HTMLElement
     && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
@@ -3694,24 +3755,3 @@ document.addEventListener("keydown", (event) => {
 });
 
 loadBookmarkTree();
-
-const toggleStyle = document.createElement("style");
-toggleStyle.textContent = `
-.bookmarks-grid {
-  transition: opacity 0.3s ease, transform 0.3s ease, max-height 0.3s ease;
-  transform-origin: top;
-  max-height: 5000px;
-}
-.bookmarks-grid.is-collapsed {
-  opacity: 0;
-  transform: translateY(-10px);
-  pointer-events: none;
-  max-height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  gap: 0 !important;
-  overflow: hidden;
-  border: none !important;
-}
-`;
-document.head.append(toggleStyle);

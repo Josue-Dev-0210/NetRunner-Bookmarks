@@ -6,6 +6,7 @@ A lightweight, smart bookmark and shortcut manager built in pure JavaScript with
 - **Node Management (Bookmarks):** Explore and organize your browser’s local bookmark network with a terminal-style interface.
 - **Local Productivity Widgets:** Includes a built-in task queue manager and notepad that save information locally (autosave).
 - **Premium Navigation Dock:** A bottom glass dock keeps service shortcuts in view; its Sections menu groups workspace navigation, bookmark boards, and Visual System controls.
+- **Expanded Layout:** Press **F11** to toggle the full-width dashboard layout; the browser window itself can still use its native fullscreen shortcut.
 - **Node Signals Panel:** System telemetry starts hidden and can be shown or hidden from the Sections menu; visibility is saved with local widget preferences.
 - **Clock Display Controls:** Clock-side labels, seconds, timezone, date, system status, and HUD signals (ACCESS GRANTED, LINK ARCHIVE READY, AWAITING INPUT, USER / ONLINE) start hidden and can be enabled individually; choose a shared color for auxiliary text. Netrunner messages are off by default.
 - **Built-in AI Launcher:** Clickable shortcuts for ChatGPT, Gemini, Claude, and other services; add up to 60 custom HTTPS shortcuts from Visual System.

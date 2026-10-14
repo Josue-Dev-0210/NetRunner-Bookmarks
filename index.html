@@ -16,8 +16,8 @@
       <div class="boot-scanlines" aria-hidden="true"></div>
       <div id="boot-lines" class="boot-lines" aria-live="polite"></div>
     </div>
-    <section id="onboarding-overlay" class="onboarding-overlay" hidden aria-labelledby="onboarding-title">
-      <div class="onboarding-card" role="dialog" aria-modal="true">
+    <section id="onboarding-overlay" class="onboarding-overlay" hidden>
+      <div class="onboarding-card" role="dialog" aria-modal="true" aria-labelledby="onboarding-title" tabindex="-1">
         <span class="section-kicker">QUICK START // ORGANIZE YOUR SPACE</span>
         <h2 id="onboarding-title">YOUR DASHBOARD, YOUR WAY</h2>
         <p class="onboarding-lead">Start with a clean workspace. Add only the panels you need; your bookmarks and settings stay on this device.</p>
@@ -57,6 +57,7 @@
     <div class="background-mark background-mark--devil" aria-hidden="true">悪魔</div>
 
     <main class="dashboard">
+      <h1 class="visually-hidden">Netrunner Bookmarks</h1>
       <aside class="dashboard-sidebar">
         <section id="node-signals" class="telemetry-panel" aria-label="System telemetry">
           <div class="telemetry-header">NODE SIGNALS</div>
@@ -95,7 +96,7 @@
               <div class="hero-signal clock-extra-user">USER: <strong id="profile-name">RUNNER</strong> <span>● ONLINE</span></div>
             </div>
             <div class="hud-label">NIGHT CITY // DEMONTECH NODE</div>
-            <div class="hud-clock-card" aria-label="Local system time">
+            <div class="hud-clock-card" role="group" aria-label="Local system time">
               <div class="clock-card-heading">
                 <span class="clock-card-label" data-i18n>LOCAL SYSTEM TIME</span>
                 <span class="clock-live"><span aria-hidden="true"></span><span data-i18n>LIVE</span></span>
